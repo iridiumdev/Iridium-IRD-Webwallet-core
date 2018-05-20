@@ -1,0 +1,38 @@
+buildscript {
+	ext {
+		springBootVersion = '2.0.2.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+subprojects {
+
+	apply plugin: 'java'
+	apply plugin: 'eclipse'
+	apply plugin: 'org.springframework.boot'
+	apply plugin: 'io.spring.dependency-management'
+
+	group = 'cash.ird.webwallet'
+	sourceCompatibility = 10
+
+	repositories {
+		mavenCentral()
+		jcenter()
+	}
+
+	dependencies {
+		runtime('org.springframework.boot:spring-boot-devtools')
+		compileOnly('org.springframework.boot:spring-boot-configuration-processor')
+		compileOnly('org.projectlombok:lombok')
+	}
+
+
+
+}
+
+
