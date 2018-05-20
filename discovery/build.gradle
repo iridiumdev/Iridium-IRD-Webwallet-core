@@ -1,0 +1,25 @@
+version = '0.0.1-SNAPSHOT' //todo add release plugin to get the correct version
+
+dependencies {
+    compile('org.springframework.cloud:spring-cloud-starter-netflix-eureka-server') {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+    }
+
+    compile('org.springframework.boot:spring-boot-starter-jetty') {
+        exclude group: 'org.eclipse.jetty.websocket', module: 'javax-websocket-server-impl'
+        exclude group: 'org.eclipse.jetty.websocket', module: 'websocket-server'
+    }
+
+    compile 'javax.xml.bind:jaxb-api:2.3.0'
+    compile 'com.sun.xml.bind:jaxb-core:2.3.0'
+    compile 'com.sun.xml.bind:jaxb-impl:2.3.0'
+    compile 'javax.activation:activation:1.1.1'
+
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}

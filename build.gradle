@@ -10,19 +10,28 @@ buildscript {
 	}
 }
 
-subprojects {
+ext {
+	springCloudVersion = 'Finchley.BUILD-SNAPSHOT'
+}
 
-	apply plugin: 'java'
+
+allprojects {
 	apply plugin: 'eclipse'
+}
+
+subprojects {
+	apply plugin: 'java'
 	apply plugin: 'org.springframework.boot'
 	apply plugin: 'io.spring.dependency-management'
 
 	group = 'cash.ird.webwallet'
-	sourceCompatibility = 10
+	sourceCompatibility = 9
 
 	repositories {
 		mavenCentral()
 		jcenter()
+		maven { url "https://repo.spring.io/snapshot" }
+		maven { url "https://repo.spring.io/milestone" }
 	}
 
 	dependencies {
