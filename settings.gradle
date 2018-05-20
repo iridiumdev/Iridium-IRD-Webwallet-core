@@ -1,4 +1,3 @@
 rootProject.name = 'webwallet-core'
 
 include ':server'
-include ':discovery'
