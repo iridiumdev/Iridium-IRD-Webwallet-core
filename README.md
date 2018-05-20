@@ -8,4 +8,9 @@
 
 ## server
 
+Run the [ServerApplication.java](server/src/main/java/cash/ird/webwallet/server/ServerApplication.java) class to start the server.
+
 ## discovery
+
+Run the [DiscoveryApplication.java](discovery/src/main/java/cash/ird/webwallet/discovery/DiscoveryApplication.java) class to start the service discovery.
+
