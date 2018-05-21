@@ -1,9 +1,6 @@
 # webwallet-core
 
-This is the Iridium webwallet server implementation (the core). The webwallet is a distributed system consisting of various microservices. So to run the whole stack you need the following services as well:
-
-- [webwallet-discovery](https://github.com/iridiumdev/webwallet-discovery)
-- [webwallet-satellite](https://github.com/iridiumdev/webwallet-satellite)
+This is the Iridium webwallet server implementation (the core).
 
 ## server
 
@@ -13,7 +10,6 @@ This is the Iridium webwallet server implementation (the core). The webwallet is
 - docker-compose v1.21.0+
 
 ### Running the server
-**NOTE**: Make sure that you have the discovery and at least one instance of a satellite running before you start the server.
 
 Run the [ServerApplication.java](server/src/main/java/cash/ird/webwallet/server/ServerApplication.java) class to start the server.
 
