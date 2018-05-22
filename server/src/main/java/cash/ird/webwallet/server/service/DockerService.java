@@ -61,6 +61,7 @@ public class DockerService {
     @SuppressWarnings("UnusedReturnValue")
     public boolean removeContainerIfExisting(String id) throws DockerException, InterruptedException {
         try {
+            dockerClient.stopContainer(id, 0);
             dockerClient.removeContainer(id);
         } catch (ContainerNotFoundException e) {
             log.info("Container {} not found. Nothing to delete.", id);

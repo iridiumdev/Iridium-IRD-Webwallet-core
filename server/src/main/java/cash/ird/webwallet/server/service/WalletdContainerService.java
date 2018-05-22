@@ -2,11 +2,10 @@ package cash.ird.webwallet.server.service;
 
 import cash.ird.walletd.IridiumAPI;
 import cash.ird.walletd.model.request.PrivateKey;
-import cash.ird.walletd.rpc.exception.IridiumWalletdException;
 import cash.ird.webwallet.server.config.WalletdConfig;
 import cash.ird.webwallet.server.config.props.WalletdSatelliteProperties;
+import cash.ird.webwallet.server.service.model.WalletContainerMapping;
 import cash.ird.webwallet.server.service.walletd.WalletdDispatcherClient;
-import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import lombok.extern.slf4j.Slf4j;
@@ -36,31 +35,43 @@ public class WalletdContainerService {
     }
 
     // TODO: 22.05.18 - make this actually reactive *facepalm*
-    public Mono<String> createWallet(String viewSecretKey, String spendSecretKey, String password) throws DockerException, InterruptedException, IridiumWalletdException {
+    public Mono<WalletContainerMapping> createWallet(String viewSecretKey, String spendSecretKey, String password) {
 
-        String uuid = UUID.randomUUID().toString();
+        return Mono.create(sink -> {
+            String uuid = UUID.randomUUID().toString();
 
-        List<String> cmd = new ArrayList<>(satelliteProperties.getCommand());
-        cmd.add(String.format("--container-password=%s", password));
+            List<String> cmd = new ArrayList<>(satelliteProperties.getCommand());
+            cmd.add(String.format("--container-password=%s", password));
 
-        ContainerConfig.Builder builder = dockerService.buildConfigFromProperties(satelliteProperties)
-                .cmd(cmd)
-                .env(
-                        String.format("VIRTUAL_HOST=%s.wallet", uuid),
-                        "VIRTUAL_PORT=14007"
-                );
+            ContainerConfig.Builder builder = dockerService.buildConfigFromProperties(satelliteProperties)
+                    .cmd(cmd)
+                    .env(
+                            String.format("VIRTUAL_HOST=%s.wallet", uuid),
+                            "VIRTUAL_PORT=14007"
+                    );
 
-        ContainerCreation containerCreation = dockerService.createContainerFromBuilder(builder);
-        dockerService.connectToNetwork(containerCreation.id(), walletdNetwork.getId());
 
-        dockerService.startContainer(containerCreation.id());
+            try {
 
-        Thread.sleep(5000); // TODO: 22.05.18 - nah.
+                ContainerCreation containerCreation = dockerService.createContainerFromBuilder(builder);
+                dockerService.connectToNetwork(containerCreation.id(), walletdNetwork.getId());
+                dockerService.renameContainer(containerCreation.id(), uuid);
+                dockerService.startContainer(containerCreation.id());
 
-        IridiumAPI iridiumAPI = walletdDispatcherClient.target(String.format("%s.wallet", uuid));
+                Thread.sleep(5000); // TODO: 22.05.18 - nah.
 
-        iridiumAPI.reset(viewSecretKey);
-        return Mono.just(iridiumAPI.createAddress(PrivateKey.of(spendSecretKey)));
+                IridiumAPI iridiumAPI = walletdDispatcherClient.target(String.format("%s.wallet", uuid));
+
+                iridiumAPI.reset(viewSecretKey);
+                String address = iridiumAPI.createAddress(PrivateKey.of(spendSecretKey));
+
+                sink.success(WalletContainerMapping.of(address, uuid));
+
+            } catch (Exception e) {
+                sink.error(e);
+            }
+
+        });
 
     }
 
