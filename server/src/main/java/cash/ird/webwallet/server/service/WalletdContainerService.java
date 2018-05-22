@@ -34,7 +34,6 @@ public class WalletdContainerService {
         this.walletdDispatcherClient = walletdDispatcherClient;
     }
 
-    // TODO: 22.05.18 - make this actually reactive *facepalm*
     public Mono<WalletContainerMapping> createWallet(String viewSecretKey, String spendSecretKey, String password) {
 
         return Mono.create(sink -> {
