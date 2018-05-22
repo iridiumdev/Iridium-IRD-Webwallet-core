@@ -1,0 +1,3 @@
+walletd:
+  satellite:
+    command: ["--testnet", "--daemon-address=178.33.231.97", "--daemon-port=13107", "--data-dir=/data", "--container-file=/data/wallet"]
