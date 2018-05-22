@@ -3,3 +3,27 @@ server.port: 8000
 spring:
   application:
     name: webwallet
+
+walletd:
+  host: localhost
+  port: 14999
+  url: http://${walletd.host}:${walletd.port}/json_rpc
+  satellite:
+    image: iridiumdev/webwallet-satellite:latest
+    #docker run --rm -it iridiumdev/webwallet-satellite --testnet --local --data-dir /data -w /data/wallet -p secret
+    command: ["--testnet", "--local", "--data-dir=/data", "--container-file=/data/wallet"]
+
+  dispatcher:
+    name: dispatcher
+    image: jwilder/nginx-proxy:latest
+    ports:
+      - "${walletd.port}:80"
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+  network:
+    name: walletd-sats
+
+
+
+docker:
+  socket: unix:///var/run/docker.sock
