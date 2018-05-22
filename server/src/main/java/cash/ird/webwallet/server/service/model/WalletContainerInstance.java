@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 @Data
 @NoArgsConstructor
 @RequiredArgsConstructor(staticName = "of")
-public class WalletContainerMapping {
+public class WalletContainerInstance {
 
     @NonNull
     private String address;

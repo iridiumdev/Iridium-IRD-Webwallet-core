@@ -4,10 +4,9 @@ import cash.ird.walletd.IridiumAPI;
 import cash.ird.walletd.model.request.PrivateKey;
 import cash.ird.webwallet.server.config.WalletdConfig;
 import cash.ird.webwallet.server.config.props.WalletdSatelliteProperties;
-import cash.ird.webwallet.server.service.model.WalletContainerMapping;
+import cash.ird.webwallet.server.service.model.WalletContainerInstance;
 import cash.ird.webwallet.server.service.walletd.WalletdDispatcherClient;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,37 +33,52 @@ public class WalletdContainerService {
         this.walletdDispatcherClient = walletdDispatcherClient;
     }
 
-    public Mono<WalletContainerMapping> createWallet(String viewSecretKey, String spendSecretKey, String password) {
+    public Mono<String> createWallet(String viewSecretKey, String spendSecretKey, String password) {
 
         return Mono.create(sink -> {
-            String uuid = UUID.randomUUID().toString();
-
-            List<String> cmd = new ArrayList<>(satelliteProperties.getCommand());
-            cmd.add(String.format("--container-password=%s", password));
-
-            ContainerConfig.Builder builder = dockerService.buildConfigFromProperties(satelliteProperties)
-                    .cmd(cmd)
-                    .env(
-                            String.format("VIRTUAL_HOST=%s.wallet", uuid),
-                            "VIRTUAL_PORT=14007"
-                    );
+            String uuid = UUID.randomUUID().toString().replace("-", "");
+            String containerSetupName = String.format("%s.setup", uuid);
 
 
             try {
 
+                List<String> cmd = new ArrayList<>(satelliteProperties.getCommand());
+                cmd.add(String.format("--container-password=%s", password));
+
+                ContainerConfig.Builder builder = dockerService.buildConfigFromProperties(satelliteProperties)
+                        .cmd(cmd)
+                        .env(
+                                String.format("VIRTUAL_HOST=%s", containerSetupName),
+                                "VIRTUAL_PORT=14007"
+                        );
+
+
+
+                Volume setupVolume = dockerService.createVolume(containerSetupName);
+
+                builder.hostConfig(
+                        HostConfig.builder()
+                        .appendBinds(String.format("%s:%s", setupVolume.name(), "/data"))
+                        .build()
+                );
+
+
                 ContainerCreation containerCreation = dockerService.createContainerFromBuilder(builder);
                 dockerService.connectToNetwork(containerCreation.id(), walletdNetwork.getId());
-                dockerService.renameContainer(containerCreation.id(), uuid);
+                dockerService.renameContainer(containerCreation.id(), containerSetupName);
                 dockerService.startContainer(containerCreation.id());
 
                 Thread.sleep(5000); // TODO: 22.05.18 - nah.
 
-                IridiumAPI iridiumAPI = walletdDispatcherClient.target(String.format("%s.wallet", uuid));
+                IridiumAPI iridiumAPI = walletdDispatcherClient.target(containerSetupName);
 
                 iridiumAPI.reset(viewSecretKey);
                 String address = iridiumAPI.createAddress(PrivateKey.of(spendSecretKey));
 
-                sink.success(WalletContainerMapping.of(address, uuid));
+                dockerService.removeContainerIfExisting(containerSetupName);
+                dockerService.renameVolume(containerSetupName, String.format("%s.wallet", address));
+
+                sink.success(address);
 
             } catch (Exception e) {
                 sink.error(e);
@@ -72,6 +86,48 @@ public class WalletdContainerService {
 
         });
 
+    }
+
+    public Mono<WalletContainerInstance> loadWallet(String address, String password) {
+        return Mono.create(sink -> {
+
+            try {
+                String containerName = String.format("%s.wallet", address);
+
+                ContainerInfo containerInfo = dockerService.findContainer(containerName);
+                if (containerInfo != null && containerInfo.state().running()) {
+                    sink.success(WalletContainerInstance.of(address, containerName));
+                } else {
+                    List<String> cmd = new ArrayList<>(satelliteProperties.getCommand());
+                    cmd.add(String.format("--container-password=%s", password));
+
+                    ContainerConfig.Builder builder = dockerService.buildConfigFromProperties(satelliteProperties)
+                            .cmd(cmd)
+                            .env(
+                                    String.format("VIRTUAL_HOST=%s", containerName),
+                                    "VIRTUAL_PORT=14007"
+                            );
+
+                    builder.hostConfig(
+                            HostConfig.builder()
+                                    .appendBinds(String.format("%s:%s", containerName, "/data"))
+                                    .build()
+                    );
+
+                    ContainerCreation containerCreation = dockerService.createContainerFromBuilder(builder);
+                    dockerService.connectToNetwork(containerCreation.id(), walletdNetwork.getId());
+                    dockerService.renameContainer(containerCreation.id(), containerName);
+                    dockerService.startContainer(containerCreation.id());
+                    Thread.sleep(5000); // TODO: 22.05.18 - nah.
+
+                    sink.success(WalletContainerInstance.of(address, containerName));
+                }
+
+            } catch (Exception e) {
+                sink.error(e);
+            }
+
+        });
     }
 
 

@@ -2,6 +2,7 @@ package cash.ird.webwallet.server.service;
 
 import cash.ird.webwallet.server.config.props.SimpleContainerProperties;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.exceptions.NetworkNotFoundException;
@@ -28,13 +29,15 @@ public class DockerService {
 
         builder.image(containerProperties.getImage());
 
+        builder.cmd(containerProperties.getCommand());
+
         if (containerProperties.getPorts() != null || containerProperties.getVolumes() != null) {
             HostConfig.Builder hostBuilder = HostConfig.builder();
 
             containerProperties.getPorts().forEach(portMapping -> {
                 String[] ports = portMapping.split(":");
                 hostBuilder.portBindings(
-                        ImmutableMap.of( ports[1], Collections.singletonList(PortBinding.of("", ports[0])))
+                        ImmutableMap.of(ports[1], Collections.singletonList(PortBinding.of("", ports[0])))
                 );
                 builder.exposedPorts(ports[1]);
             });
@@ -67,6 +70,20 @@ public class DockerService {
         dockerClient.renameContainer(id, name);
     }
 
+    public ContainerInfo inspectContainer(String id) throws DockerException, InterruptedException {
+        return dockerClient.inspectContainer(id);
+    }
+
+    public ContainerInfo findContainer(String id) throws DockerException, InterruptedException {
+        try {
+            return dockerClient.inspectContainer(id);
+        } catch (ContainerNotFoundException e) {
+            return null;
+        }
+    }
+
+
+
     @SuppressWarnings("UnusedReturnValue")
     public boolean removeContainerIfExisting(String id) throws DockerException, InterruptedException {
         try {
@@ -98,7 +115,6 @@ public class DockerService {
         }
 
 
-
     }
 
     public void connectToNetwork(String containerId, String networkId) throws DockerException, InterruptedException {
@@ -107,6 +123,51 @@ public class DockerService {
 
     public void disconnectFromNetwork(String containerId, String networkId) throws DockerException, InterruptedException {
         dockerClient.disconnectFromNetwork(containerId, networkId);
+    }
+
+    public Volume createVolume(String volumeName) throws DockerException, InterruptedException {
+        final Volume toCreate = Volume.builder()
+                .name(volumeName)
+                .driver("local")
+                .build();
+        return dockerClient.createVolume(toCreate);
+    }
+
+    public void renameVolume(String oldVolumeName, String newVolumeName) throws DockerException, InterruptedException {
+        final Volume newVolume = Volume.builder()
+                .name(newVolumeName)
+                .driver("local")
+                .build();
+        dockerClient.createVolume(newVolume);
+
+        ContainerConfig.Builder builder = ContainerConfig
+                .builder()
+                .image("alpine")
+                .cmd("ash", "-c", "cp -av /from/* /to")
+                .hostConfig(
+                        HostConfig.builder()
+                                .appendBinds(String.format("%s:%s", oldVolumeName, "/from"))
+                                .appendBinds(String.format("%s:%s", newVolumeName, "/to"))
+                                .build()
+                );
+
+        ContainerCreation containerCreation = createContainerFromBuilder(builder);
+
+        dockerClient.startContainer(containerCreation.id());
+
+        final ContainerExit exit = dockerClient.waitContainer(containerCreation.id());
+
+
+        //noinspection ConstantConditions
+        if (exit.statusCode() == 0) {
+            removeContainerIfExisting(containerCreation.id());
+            dockerClient.removeVolume(oldVolumeName);
+        } else {
+            removeContainerIfExisting(containerCreation.id());
+            throw new DockerException(String.format("Could not rename volume from %s to %s", oldVolumeName, newVolumeName));
+        }
+
+
     }
 
 }
