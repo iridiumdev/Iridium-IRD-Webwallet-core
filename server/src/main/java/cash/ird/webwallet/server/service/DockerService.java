@@ -10,7 +10,7 @@ import jersey.repackaged.com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 @Slf4j
 @Service
@@ -28,13 +28,22 @@ public class DockerService {
 
         builder.image(containerProperties.getImage());
 
-//        if (containerProperties.getPorts() != null) {
-//
-//        }
+        if (containerProperties.getPorts() != null || containerProperties.getVolumes() != null) {
+            HostConfig.Builder hostBuilder = HostConfig.builder();
 
-//        if (containerProperties.getVolumes() != null) {
-//            builder.volumes(containerProperties.getVolumes());
-//        }
+            containerProperties.getPorts().forEach(portMapping -> {
+                String[] ports = portMapping.split(":");
+                hostBuilder.portBindings(
+                        ImmutableMap.of( ports[1], Collections.singletonList(PortBinding.of("", ports[0])))
+                );
+                builder.exposedPorts(ports[1]);
+            });
+
+            containerProperties.getVolumes().forEach(hostBuilder::appendBinds);
+
+            builder.hostConfig(hostBuilder.build());
+
+        }
 
         return builder;
     }
