@@ -26,3 +26,6 @@ walletd:
 
 docker:
   socket: unix:///var/run/docker.sock
+  pull-images:
+    - ${walletd.satellite.image}
+    - ${walletd.dispatcher.image}
