@@ -4,6 +4,14 @@ spring:
   application:
     name: webwallet
 
+security.oauth2.resource.id: ${spring.application.name}
+
+token:
+  access-token:
+    valid-seconds: 3600
+  refresh-token:
+    valid-seconds: 3600
+
 walletd:
   host: localhost
   port: 14999
@@ -21,8 +29,6 @@ walletd:
       - "/var/run/docker.sock:/tmp/docker.sock:ro"
   network:
     name: walletd-sats
-
-
 
 
 docker:

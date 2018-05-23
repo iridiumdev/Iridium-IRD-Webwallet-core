@@ -4,10 +4,12 @@ import cash.ird.webwallet.server.rest.model.KeyImport;
 import cash.ird.webwallet.server.rest.model.WalletBase;
 import cash.ird.webwallet.server.rest.model.WalletStatus;
 import cash.ird.webwallet.server.service.WalletService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 @RestController
+@PreAuthorize("isAuthenticated()")
 public class WalletController {
 
 

@@ -5,13 +5,22 @@ repositories {
 }
 
 dependencies {
+
+    compile('javax.xml.bind:jaxb-api:2.2.11')
+    compile('com.sun.xml.bind:jaxb-core:2.2.11')
+    compile('com.sun.xml.bind:jaxb-impl:2.2.11')
+
 //    compile('org.springframework.boot:spring-boot-starter-actuator')
     compile('org.springframework.boot:spring-boot-starter-cache')
 //    compile('org.springframework.boot:spring-boot-starter-data-redis-reactive')
     compile('org.springframework.boot:spring-boot-starter-mail')
-//    compile('org.springframework.boot:spring-boot-starter-security')
-    compile('org.springframework.boot:spring-boot-starter-webflux')
     compile('org.springframework.boot:spring-boot-starter-websocket')
+    compile('org.springframework.cloud:spring-cloud-starter-oauth2')
+    compile('org.springframework.boot:spring-boot-starter-security')
+    compile("io.springfox:springfox-swagger2:2.9.0")
+    compile("io.springfox:springfox-swagger-ui:2.9.0")
+
+    compile('org.springframework.boot:spring-boot-starter-webflux')
 
 //    compile('org.springframework.session:spring-session-data-redis')
     compile('com.spotify:docker-client:8.11.3')
