@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -70,15 +71,13 @@ public class DockerService {
         dockerClient.renameContainer(id, name);
     }
 
-    public ContainerInfo inspectContainer(String id) throws DockerException, InterruptedException {
-        return dockerClient.inspectContainer(id);
-    }
 
-    public ContainerInfo findContainer(String id) throws DockerException, InterruptedException {
+    public Optional<ContainerInfo> findContainer(String id) throws DockerException, InterruptedException {
         try {
-            return dockerClient.inspectContainer(id);
+            return Optional.of(dockerClient.inspectContainer(id));
         } catch (ContainerNotFoundException e) {
-            return null;
+            log.debug("Container {} not found!", id);
+            return Optional.empty();
         }
     }
 
@@ -126,6 +125,7 @@ public class DockerService {
     }
 
     public Volume createVolume(String volumeName) throws DockerException, InterruptedException {
+        log.debug("Creating volume {}.", volumeName);
         final Volume toCreate = Volume.builder()
                 .name(volumeName)
                 .driver("local")

@@ -1,12 +1,13 @@
 package cash.ird.webwallet.server.rest.model;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
-public class KeyImport {
+@EqualsAndHashCode(callSuper = true)
+public class KeyImportDto extends PasswordDto{
 
     private String viewSecretKey;
     private String spendSecretKey;
-    private String password;
 
 }

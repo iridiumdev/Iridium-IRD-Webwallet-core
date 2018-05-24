@@ -14,6 +14,6 @@ public class WalletContainerInstance {
     private String address;
 
     @NonNull
-    private String container;
+    private String containerHash;
 
 }

@@ -4,7 +4,11 @@ spring:
   application:
     name: webwallet
 
-security.oauth2.resource.id: ${spring.application.name}
+security:
+  oauth2:
+    resource:
+      id: ${spring.application.name}
+
 
 token:
   access-token:
