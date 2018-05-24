@@ -3,8 +3,9 @@ package cash.ird.webwallet.server.rest.controller;
 import cash.ird.webwallet.server.domain.User;
 import cash.ird.webwallet.server.exception.UserRegistrationException;
 import cash.ird.webwallet.server.repository.UserRepository;
-import cash.ird.webwallet.server.rest.model.UserCredentialsDto;
 import cash.ird.webwallet.server.rest.model.UserDto;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +29,7 @@ public class UserController {
 
     @PostMapping("/api/users")
     @ResponseStatus(HttpStatus.CREATED)
+    @ApiResponses(value = {@ApiResponse(code = 201, message = "Created", response = UserDto.class)})
     public Mono<UserDto> register(@RequestBody UserDto userDto) {
 
         return Mono.<User>create(sink -> {
