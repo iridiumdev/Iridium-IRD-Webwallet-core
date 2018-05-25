@@ -1,0 +1,12 @@
+<mat-sidenav-container fullscreen>
+  <mat-sidenav mode="over" #sidenav>Sidenav content</mat-sidenav>
+  <mat-sidenav-content>
+    <mat-toolbar color="primary" class="mat-elevation-z6">
+      <mat-toolbar-row>
+        <button mat-icon-button (click)="sidenav.toggle()"><mat-icon>menu</mat-icon></button>
+        <span>Iridium!</span>
+      </mat-toolbar-row>
+    </mat-toolbar>
+    <router-outlet></router-outlet>
+  </mat-sidenav-content>
+</mat-sidenav-container>

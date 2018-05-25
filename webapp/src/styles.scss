@@ -1,0 +1,26 @@
+
+@import "~normalize-scss/sass/normalize/import-now";
+
+@import '~@angular/material/theming';
+@include mat-core();
+// For each palette, you can optionally specify a default, lighter, and darker
+// hue. Available color palettes: https://material.io/design/color/
+$iridium-app-primary: mat-palette($mat-amber);
+$iridium-app-accent:  mat-palette($mat-deep-orange);
+
+// The warn palette is optional (defaults to red).
+$iridum-app-warn:    mat-palette($mat-red);
+
+
+.iridium-dark-theme {
+  // Create the theme object (a Sass map containing all of the palettes).
+  $iridium-dark-theme: mat-dark-theme($iridium-app-primary, $iridium-app-accent, $iridum-app-warn);
+  @include angular-material-theme($iridium-dark-theme);
+}
+
+.iridium-light-theme {
+  // Create the theme object (a Sass map containing all of the palettes).
+  $iridium-light-theme: mat-light-theme($iridium-app-primary, $iridium-app-accent, $iridum-app-warn);
+  @include angular-material-theme($iridium-light-theme);
+}
+

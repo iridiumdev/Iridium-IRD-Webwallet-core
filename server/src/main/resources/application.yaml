@@ -3,6 +3,8 @@ server.port: 8000
 spring:
   application:
     name: webwallet
+  resources:
+    static-locations: file:webapp/dist/webapp/,classpath:/static/
 
 security:
   oauth2:
