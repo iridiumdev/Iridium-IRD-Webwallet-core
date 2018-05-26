@@ -1,65 +1,81 @@
 package cash.ird.webwallet.server.config.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.*;
+import org.springframework.security.crypto.scrypt.SCryptPasswordEncoder;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
-@EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+@EnableWebFluxSecurity
+@EnableReactiveMethodSecurity
+public class SecurityConfig {
 
-    private final UserDetailsService userDetailsService;
-    private final PasswordEncoder passwordEncoder;
+    private final ReactiveUserDetailsService userDetailsRepository;
 
     @Autowired
-    public SecurityConfig(@Qualifier("userService") UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        this.userDetailsService = userDetailsService;
-        this.passwordEncoder = passwordEncoder;
+    public SecurityConfig(ReactiveUserDetailsService userService) {
+        this.userDetailsRepository = userService;
     }
-
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setPasswordEncoder(passwordEncoder);
-        provider.setUserDetailsService(userDetailsService);
-        return provider;
+    public PasswordEncoder passwordEncoder(){
+        String idForEncode = "bcrypt";
+
+        Map<String, PasswordEncoder> encoders = new HashMap<>();
+        encoders.put(idForEncode, new BCryptPasswordEncoder());
+        encoders.put("pbkdf2", new Pbkdf2PasswordEncoder());
+        encoders.put("scrypt", new SCryptPasswordEncoder());
+
+       return new DelegatingPasswordEncoder(idForEncode, encoders);
     }
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth
-                .userDetailsService(userDetailsService)
-                .passwordEncoder(passwordEncoder);
-    }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and().authorizeRequests()
-                .antMatchers("/", "/**").permitAll()
-                .antMatchers(HttpMethod.OPTIONS).permitAll()
-                .anyRequest().authenticated()
-                .and().httpBasic()
-                .and().csrf().disable();
-    }
-
-    @Override
+    /**
+     * For Spring Security webflux, a chain of filters will provide user authentication
+     * and authorization, we add custom filters to enable JWT token approach.
+     *
+     * @param http An initial object to build common filter scenarios.
+     *             Customized filters are added here.
+     * @return SecurityWebFilterChain A filter chain for web exchanges that will
+     * provide security
+     */
     @Bean
-    public AuthenticationManager authenticationManagerBean() throws Exception {
-        return super.authenticationManagerBean();
-    }
+    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http, ObjectMapper objectMapper) {
+        AuthenticationWebFilter authenticationJWT;
 
+        authenticationJWT = new AuthenticationWebFilter(new UserDetailsRepositoryReactiveAuthenticationManager(userDetailsRepository));
+        authenticationJWT.setAuthenticationSuccessHandler(new JWTAuthenticationSuccessHandler(objectMapper));
+        authenticationJWT.setAuthenticationConverter(new ServerJsonAuthenticationConverter(objectMapper));
+
+        http
+                .authorizeExchange()
+                .pathMatchers("/login", "/**", "/auth/token", "/auth/register")
+                .permitAll()
+                .and()
+                .addFilterAt(authenticationJWT, SecurityWebFiltersOrder.FIRST)
+                .authorizeExchange()
+                .pathMatchers("/api/**")
+                .authenticated()
+                .and()
+                .addFilterAt(new JWTAuthorizationWebFilter(), SecurityWebFiltersOrder.HTTP_BASIC)
+                .csrf().disable()
+                ;
+
+        return http.build();
+    }
 
 }

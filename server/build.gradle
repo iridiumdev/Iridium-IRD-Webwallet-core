@@ -28,6 +28,7 @@ dependencies {
     compile('javax.xml.bind:jaxb-api:2.2.11')
     compile('com.sun.xml.bind:jaxb-core:2.2.11')
     compile('com.sun.xml.bind:jaxb-impl:2.2.11')
+    compile('javax.activation:activation:1.1.1')
 
     compile('com.google.guava:guava:25.1-jre')
 
@@ -36,10 +37,13 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-data-redis')
     compile('redis.clients:jedis:2.9.0')
 
-    compile('org.springframework.boot:spring-boot-starter-mail')
-    compile('org.springframework.boot:spring-boot-starter-websocket')
-    compile('org.springframework.cloud:spring-cloud-starter-oauth2')
+//    compile('org.springframework.boot:spring-boot-starter-mail')
+//    compile('org.springframework.boot:spring-boot-starter-websocket')
+
     compile('org.springframework.boot:spring-boot-starter-security')
+    compile('org.springframework.security:spring-security-oauth2-core')
+    compile('org.springframework.security:spring-security-oauth2-jose')
+
     compile("io.springfox:springfox-swagger2:2.9.0")
     compile("io.springfox:springfox-swagger-ui:2.9.0")
 

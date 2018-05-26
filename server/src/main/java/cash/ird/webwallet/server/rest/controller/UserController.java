@@ -27,7 +27,7 @@ public class UserController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    @PostMapping("/api/users")
+    @PostMapping("/auth/register")
     @ResponseStatus(HttpStatus.CREATED)
     @ApiResponses(value = {@ApiResponse(code = 201, message = "Created", response = UserDto.class)})
     public Mono<UserDto> register(@RequestBody UserDto userDto) {
