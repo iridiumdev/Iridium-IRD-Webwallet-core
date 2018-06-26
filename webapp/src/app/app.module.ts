@@ -13,8 +13,9 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {SimpleWebStorageModule} from "@elderbyte/ngx-simple-webstorage";
-import {JwtAuthModule, RefreshStrategy} from "@elderbyte/ngx-jwt-auth";
+import {JwtAuthModule, RefreshStrategy, StorageType} from "@elderbyte/ngx-jwt-auth";
 import {HttpClientModule} from "@angular/common/http";
+import {LoggerFactory, LogLevel} from "@elderbyte/ts-logger";
 
 
 @NgModule({
@@ -34,8 +35,17 @@ import {HttpClientModule} from "@angular/common/http";
       accessDeniedRoute: '/denied',
       obtainTokenUrl: '/auth/token',
       refresh: {
-        strategy: RefreshStrategy.PERIODIC,
+        strategy: RefreshStrategy.ONDEMAND,
         interval: 10000
+      },
+      tokenStorage: {
+        type: StorageType.LOCAL,
+        accessTokenKeyName: 'access_token',
+        refreshTokenKeyName: 'refresh_token'
+      },
+      jwt: {
+        usernameField: 'sub',
+        rolesField: 'authorities'
       }
     }),
 
@@ -50,4 +60,10 @@ import {HttpClientModule} from "@angular/common/http";
   bootstrap: [AppComponent]
 })
 export class AppModule {
+
+  constructor() {
+    LoggerFactory.getDefaultConfiguration().withMaxLevel(LogLevel.Trace)
+  }
+
+
 }
