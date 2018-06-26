@@ -7,11 +7,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -47,9 +49,15 @@ public class BearerAuthenticationConverter implements Function<ServerWebExchange
                 .filter(Objects::nonNull)
                 .filter(matchBearerLength)
                 .map(isolateBearerValue)
+                .flatMap(this::applyPlain);
+    }
+
+    public Mono<Authentication> applyPlain(String rawToken) {
+        return Mono.justOrEmpty(rawToken)
+                .filter(Objects::nonNull)
                 .filter(token -> !token.isEmpty())
                 .map(this::checkSignedToken)
-                .map(this::createAuthentication)
+                .flatMap(this::createAuthentication)
                 .filter(Objects::nonNull);
     }
 
@@ -75,23 +83,33 @@ public class BearerAuthenticationConverter implements Function<ServerWebExchange
         });
     }
 
-    private Authentication createAuthentication(Mono<SignedJWT> signedJWTMono) {
-        SignedJWT signedJWT = signedJWTMono.block();
-        String subject;
-        String auths;
-        List authorities;
+    private Mono<Authentication> createAuthentication(Mono<SignedJWT> signedJWTMono) {
+        return signedJWTMono
+                .map(signedJWT -> {
 
-        try {
-            subject = signedJWT.getJWTClaimsSet().getSubject();
-            auths = (String) signedJWT.getJWTClaimsSet().getClaim("authorities");
-        } catch (ParseException e) {
-            return null;
-        }
-        authorities = Stream.of(auths.split(","))
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
+                    String subject;
+                    String auths;
+                    List<GrantedAuthority> authorities;
 
-        return new UsernamePasswordAuthenticationToken(subject, null, authorities);
+                    try {
+                        subject = signedJWT.getJWTClaimsSet().getSubject();
+                        auths = (String) signedJWT.getJWTClaimsSet().getClaim("authorities");
+                    } catch (ParseException e) {
+                        return null;
+                    }
+
+                    if (auths != null) {
+                        authorities = Stream.of(auths.split(","))
+                                .map(SimpleGrantedAuthority::new)
+                                .collect(Collectors.toList());
+                    } else {
+                        authorities = Collections.emptyList();
+                    }
+
+
+                    return new UsernamePasswordAuthenticationToken(subject, null, authorities);
+
+                });
 
     }
 }

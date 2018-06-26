@@ -34,7 +34,8 @@ import {HttpClientModule} from "@angular/common/http";
       accessDeniedRoute: '/denied',
       obtainTokenUrl: '/auth/token',
       refresh: {
-        strategy: RefreshStrategy.ONDEMAND
+        strategy: RefreshStrategy.PERIODIC,
+        interval: 10000
       }
     }),
 

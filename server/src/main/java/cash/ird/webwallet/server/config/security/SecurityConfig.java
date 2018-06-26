@@ -82,14 +82,17 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http, ObjectMapper objectMapper, JWTTokenService jwtTokenService, JWSVerifier jwsVerifier, ReactiveAuthenticationManager delegatingReactiveAuthenticationManager) {
 
+        BearerAuthenticationConverter bearerAuthenticationConverter = new BearerAuthenticationConverter(jwsVerifier);
+
         // For the auth with username+password over json or using the refresh_token -> get a new pair of tokens
         AuthenticationWebFilter jwtAuthenticationFilter = new AuthenticationWebFilter(delegatingReactiveAuthenticationManager);
         jwtAuthenticationFilter.setAuthenticationSuccessHandler(new JWTSuccessHandler(objectMapper, jwtTokenService));
         jwtAuthenticationFilter.setAuthenticationFailureHandler(new JWTFailureHandler());
-        jwtAuthenticationFilter.setAuthenticationConverter(new JsonAuthConverter(objectMapper));
+        jwtAuthenticationFilter.setAuthenticationConverter(new JsonAuthConverter(bearerAuthenticationConverter));
         jwtAuthenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers("/auth/token"));
 
-        JWTAuthorizationWebFilter jwtAuthorizationFilter = new JWTAuthorizationWebFilter(jwsVerifier);
+
+        JWTAuthorizationWebFilter jwtAuthorizationFilter = new JWTAuthorizationWebFilter(bearerAuthenticationConverter);
 
 
         http

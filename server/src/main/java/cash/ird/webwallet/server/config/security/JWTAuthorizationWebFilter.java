@@ -53,8 +53,8 @@ public class JWTAuthorizationWebFilter implements WebFilter {
     private final Function<ServerWebExchange, Mono<Authentication>> authenticationConverter;
     private ServerSecurityContextRepository securityContextRepository = NoOpServerSecurityContextRepository.getInstance();
 
-    public JWTAuthorizationWebFilter(JWSVerifier jwsVerifier) {
-        this.authenticationConverter = new BearerAuthenticationConverter(jwsVerifier);
+    public JWTAuthorizationWebFilter(Function<ServerWebExchange, Mono<Authentication>> authenticationConverter) {
+        this.authenticationConverter = authenticationConverter;
     }
 
 

@@ -1,7 +1,6 @@
 package cash.ird.webwallet.server.config.security;
 
 import cash.ird.webwallet.server.rest.model.AuthDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpMethod;
@@ -30,11 +29,11 @@ import java.util.function.Function;
 @Slf4j
 public class JsonAuthConverter implements Function<ServerWebExchange, Mono<Authentication>> {
 
-    private final ObjectMapper objectMapper;
+    private final BearerAuthenticationConverter bearerAuthenticationConverter;
     private final PathPatternParserServerWebExchangeMatcher matcher = new PathPatternParserServerWebExchangeMatcher("/auth/token", HttpMethod.POST);
 
-    public JsonAuthConverter(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public JsonAuthConverter(BearerAuthenticationConverter bearerAuthenticationConverter) {
+        this.bearerAuthenticationConverter = bearerAuthenticationConverter;
     }
 
     @Override
@@ -74,8 +73,7 @@ public class JsonAuthConverter implements Function<ServerWebExchange, Mono<Authe
                         auth.setAuthenticated(false);
                         return Mono.just(auth);
                     } else if (authDto.getGrantType() == AuthDto.GrantType.REFRESH_TOKEN) {
-                        Authentication auth = new UsernamePasswordAuthenticationToken(authDto.getUsername(), authDto.getRefreshToken());
-                        return Mono.just(auth);
+                        return this.bearerAuthenticationConverter.applyPlain(authDto.getRefreshToken());
                     }
                     return Mono.empty();
                 });
