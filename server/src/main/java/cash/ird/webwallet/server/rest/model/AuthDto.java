@@ -13,6 +13,17 @@ import lombok.NoArgsConstructor;
 public class AuthDto extends UserDto{
 
     @JsonProperty("grant_type")
-    private String grantType;
+    private GrantType grantType;
+
+    @JsonProperty("refresh_token")
+    private String refreshToken;
+
+    public enum GrantType {
+        @JsonProperty("password")
+        PASSWORD,
+
+        @JsonProperty("refresh_token")
+        REFRESH_TOKEN
+    }
 
 }

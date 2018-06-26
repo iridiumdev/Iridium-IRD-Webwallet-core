@@ -19,6 +19,7 @@
  */
 package cash.ird.webwallet.server.config.security;
 
+import com.nimbusds.jose.JWSVerifier;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -49,8 +50,13 @@ public class JWTAuthorizationWebFilter implements WebFilter {
     private ServerAuthenticationSuccessHandler authenticationSuccessHandler = new WebFilterChainServerAuthenticationSuccessHandler();
     private final ReactiveAuthenticationManager authenticationManager = new JWTReactiveAuthenticationManager();
     private ServerWebExchangeMatcher requiresAuthenticationMatcher = ServerWebExchangeMatchers.pathMatchers("/api/**");
-    private Function<ServerWebExchange, Mono<Authentication>> authenticationConverter = new ServerHttpBearerAuthenticationConverter();
+    private final Function<ServerWebExchange, Mono<Authentication>> authenticationConverter;
     private ServerSecurityContextRepository securityContextRepository = NoOpServerSecurityContextRepository.getInstance();
+
+    public JWTAuthorizationWebFilter(JWSVerifier jwsVerifier) {
+        this.authenticationConverter = new BearerAuthenticationConverter(jwsVerifier);
+    }
+
 
     /**
      * Provide a custom filtering mechanism for WebExchanges matching a restricted path
@@ -66,7 +72,7 @@ public class JWTAuthorizationWebFilter implements WebFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         return this.requiresAuthenticationMatcher.matches(exchange)
-                .filter(matchResult -> matchResult.isMatch())
+                .filter(ServerWebExchangeMatcher.MatchResult::isMatch)
                 .flatMap(matchResult -> this.authenticationConverter.apply(exchange))
                 .switchIfEmpty(chain.filter(exchange).then(Mono.empty()))
                 .flatMap(token -> authenticate(exchange, chain, token));

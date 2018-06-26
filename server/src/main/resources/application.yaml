@@ -11,12 +11,19 @@ security:
     resource:
       id: ${spring.application.name}
 
-
-token:
+jwt:
+  # CHANGE THE secret FOR PRODUCTION!
+  secret: f54eb595a95c2b7cb7cce3a5c7ef071bda82474be6d27b00c2f8c88d0b47481c30f502fe5fb1a1498a03686cc7651a9f09cca350f82c27c57d5dbf5e109341dc
+  algorithm: HS512
+  issuer: ird.cash
   access-token:
-    valid-seconds: 3600
+    valid-seconds: 300
+    type: ACCESS
   refresh-token:
     valid-seconds: 3600
+    type: REFRESH
+
+
 
 walletd:
   host: localhost
@@ -42,3 +49,8 @@ docker:
   pull-images:
     - ${walletd.satellite.image}
     - ${walletd.dispatcher.image}
+
+
+logging:
+  level:
+    cash.ird: DEBUG

@@ -11,17 +11,20 @@ import org.springframework.security.web.server.WebFilterExchange;
 import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler;
 import reactor.core.publisher.Mono;
 
+import java.text.ParseException;
+
 /**
- * On success authentication a signed JWT object is serialized and added
- * in the authorization header as a bearer token
+ * On success authentication a signed JWT pair is serialized in the body
  */
-public class JWTAuthenticationSuccessHandler
+public class JWTSuccessHandler
         implements ServerAuthenticationSuccessHandler {
 
     private final ObjectMapper objectMapper;
+    private final JWTTokenService jwtTokenService;
 
-    public JWTAuthenticationSuccessHandler(ObjectMapper objectMapper) {
+    public JWTSuccessHandler(ObjectMapper objectMapper, JWTTokenService jwtTokenService) {
         this.objectMapper = objectMapper;
+        this.jwtTokenService = jwtTokenService;
     }
 
 
@@ -32,20 +35,16 @@ public class JWTAuthenticationSuccessHandler
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
         return response
                 .writeWith(Mono.create(sink -> {
-                    // TODO: 26.05.18 add refresh token and fix those nasty hardcoded values here and there.
-                    TokenPairDto tokenPairDto = new TokenPairDto().setAccessToken(
-                            new JWTTokenService().generateToken(
-                                    authentication.getName(),
-                                    authentication.getCredentials(),
-                                    authentication.getAuthorities())
-                    );
-
-                    DefaultDataBufferFactory bufferFactory = new DefaultDataBufferFactory();
+                    TokenPairDto tokenPairDto;
                     try {
 
+                        tokenPairDto = jwtTokenService.generateTokenPair(authentication.getName(), authentication.getAuthorities());
+
+                        DefaultDataBufferFactory bufferFactory = new DefaultDataBufferFactory();
+
                         sink.success(bufferFactory.wrap(objectMapper.writeValueAsBytes(tokenPairDto)));
-                    } catch (JsonProcessingException e) {
-                        e.printStackTrace();
+                    } catch (JsonProcessingException | ParseException e) {
+                        sink.error(e);
                     }
                 }));
 
