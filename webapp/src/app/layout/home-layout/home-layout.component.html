@@ -1,12 +1,47 @@
 <mat-sidenav-container fullscreen>
-  <mat-sidenav mode="over" #sidenav>Sidenav content</mat-sidenav>
-  <mat-sidenav-content>
-    <mat-toolbar color="primary" class="mat-elevation-z6">
+  <mat-sidenav mode="over" #sidenav>
+
+    <mat-toolbar color="primary">
       <mat-toolbar-row>
-        <button mat-icon-button (click)="sidenav.toggle()"><mat-icon>menu</mat-icon></button>
-        <span>Iridium!</span>
+        <button mat-button routerLink="/"><img src="/assets/logo.png" style="height: 3em;">{{ 'app.navigation.home.title' | translate }}</button>
       </mat-toolbar-row>
     </mat-toolbar>
-    <router-outlet></router-outlet>
+
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <mat-toolbar class="mat-elevation-z6">
+      <mat-toolbar-row>
+        <button mat-icon-button (click)="sidenav.toggle()"><mat-icon>menu</mat-icon></button>
+        <button mat-button routerLink="/"><img src="/assets/logo.png" style="height: 3em;">{{ 'app.navigation.home.title' | translate }}</button>
+
+        <div class="flex-grow-1"></div>
+
+        <button mat-button routerLink="/login" *appIsAuthenticated="false">
+          <mat-icon>lock_open</mat-icon> {{ 'app.navigation.login.button' | translate }}
+        </button>
+
+        <button mat-button routerLink="/register" *appIsAuthenticated="false">
+          <mat-icon>person_add</mat-icon> {{ 'app.navigation.register.button' | translate }}
+        </button>
+
+        <button mat-button routerLink="/dashboard" *appIsAuthenticated="true">
+          <mat-icon>person</mat-icon> {{principal.username}}
+        </button>
+
+        <button mat-button (click)="logout()" *appIsAuthenticated="true">
+          <mat-icon>exit_to_app</mat-icon> {{ 'app.navigation.logout.button' | translate }}
+        </button>
+      </mat-toolbar-row>
+    </mat-toolbar>
+
+    <div class="container-fluid mt-3">
+      <div class="row">
+        <div class="col-12">
+          <router-outlet></router-outlet>
+        </div>
+      </div>
+
+    </div>
+
   </mat-sidenav-content>
 </mat-sidenav-container>

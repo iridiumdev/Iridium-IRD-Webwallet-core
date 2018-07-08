@@ -1,5 +1,5 @@
 import {BrowserModule} from '@angular/platform-browser';
-import {NgModule} from '@angular/core';
+import {NgModule, OnInit} from '@angular/core';
 
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
@@ -13,21 +13,32 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {SimpleWebStorageModule} from "@elderbyte/ngx-simple-webstorage";
-import {JwtAuthModule, RefreshStrategy, StorageType} from "@elderbyte/ngx-jwt-auth";
-import {HttpClientModule} from "@angular/common/http";
+import {JwtAuthModule, RefreshStrategy, StorageType, TokenService} from "@elderbyte/ngx-jwt-auth";
+import {HttpClient, HttpClientModule} from "@angular/common/http";
 import {LoggerFactory, LogLevel} from "@elderbyte/ts-logger";
+import {TranslateLoader, TranslateModule, TranslateService} from "@ngx-translate/core";
+import {TranslateHttpLoader} from '@ngx-translate/http-loader';
+import {FlexLayoutModule} from "@angular/flex-layout";
+import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from "@angular/material";
+import {IsAuthenticatedDirective} from "./_directives/is-authenticated.directive";
 
+// AoT requires an exported function for factories
+export function HttpLoaderFactory(httpClient: HttpClient) {
+  return new TranslateHttpLoader(httpClient, '/assets/i18n/', '.json');
+}
 
 @NgModule({
   declarations: [
     AppComponent,
     HomeLayoutComponent,
+    IsAuthenticatedDirective,
   ],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
     AppRoutingModule,
 
+    FlexLayoutModule,
     HttpClientModule,
     SimpleWebStorageModule.forRoot(),
     JwtAuthModule.forRoot({
@@ -48,22 +59,39 @@ import {LoggerFactory, LogLevel} from "@elderbyte/ts-logger";
         rolesField: 'authorities'
       }
     }),
+    TranslateModule.forRoot({
+      loader: {
+        provide: TranslateLoader,
+        useFactory: HttpLoaderFactory,
+        deps: [HttpClient]
+      }
+    }),
 
     HomeModule,
 
-    MatIconModule,
+    //exported in SharedModule
     MatButtonModule,
+    MatIconModule,
+
+    //required for layouts
     MatToolbarModule,
     MatSidenavModule
   ],
-  providers: [],
+  providers: [
+    {provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 3000}}
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule {
 
-  constructor() {
-    LoggerFactory.getDefaultConfiguration().withMaxLevel(LogLevel.Trace)
-  }
+  constructor(public translate: TranslateService) {
 
+    translate.addLangs(['en']);
+    translate.setDefaultLang('en');
+    translate.use('en');
+
+    LoggerFactory.getDefaultConfiguration().withMaxLevel(LogLevel.Trace);
+
+  }
 
 }

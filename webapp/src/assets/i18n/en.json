@@ -1,0 +1,22 @@
+{
+  "app": {
+    "navigation": {
+      "home": {
+        "title": "Iridium WebWallet",
+        "button": "Iridium WebWallet"
+      },
+      "login": {
+        "title": "Login",
+        "button": "Login"
+      },
+      "logout": {
+        "title": "Logout",
+        "button": "Logout"
+      },
+      "register": {
+        "title": "Register",
+        "button": "Register"
+      }
+    }
+  }
+}
