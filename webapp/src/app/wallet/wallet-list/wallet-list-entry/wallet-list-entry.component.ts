@@ -15,7 +15,7 @@ import {BehaviorSubject, Observable, Subject} from "rxjs";
 })
 export class WalletListEntryComponent implements OnInit {
 
-  private wallet$ = new BehaviorSubject<WalletContainer>({});
+  private wallet$ = new BehaviorSubject<WalletContainer>({} as WalletContainer);
 
   @Input()
   set wallet(value: WalletContainer) {
