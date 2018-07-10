@@ -24,8 +24,8 @@
           <mat-icon>person_add</mat-icon> {{ 'app.navigation.register.button' | translate }}
         </button>
 
-        <button mat-button routerLink="/dashboard" *appIsAuthenticated="true">
-          <mat-icon>person</mat-icon> {{principal.username}}
+        <button mat-button routerLink="/wallet" *appIsAuthenticated="true">
+          <mat-icon>account_balance_wallet</mat-icon> {{ 'app.navigation.wallet.button' | translate }}
         </button>
 
         <button mat-button (click)="logout()" *appIsAuthenticated="true">

@@ -1,0 +1,42 @@
+<mat-expansion-panel [expanded]="wallet.containerStatus === ContainerStatus.RUNNING" hideToggle>
+  <mat-expansion-panel-header>
+    <mat-panel-title class="d-flex wallet-address-title">
+      <div class="wallet-address-title">{{wallet.address}}</div>
+    </mat-panel-title>
+    <mat-panel-description class="justify-content-between">
+      <div class="d-none d-lg-flex">{{ 'app.wallet.container.status.' + wallet.containerStatus | translate }}</div>
+      <mat-icon *ngIf="wallet.containerStatus === ContainerStatus.DELETED">lock</mat-icon>
+      <mat-icon *ngIf="wallet.containerStatus === ContainerStatus.RUNNING">lock_open</mat-icon>
+      <mat-icon *ngIf="wallet.containerStatus === ContainerStatus.ERROR">report_problem</mat-icon>
+    </mat-panel-description>
+  </mat-expansion-panel-header>
+
+  <div *ngIf="wallet.containerStatus === ContainerStatus.RUNNING && walletStatus">
+    <p>
+      Wallet Status: {{walletStatus.iridiumStatus}}
+    </p>
+    <p>
+      Total Balance: {{walletStatus.currentBalance}}
+    </p>
+    <p>
+      <small>Locked Balance: {{walletStatus.lockedBalance}}</small>
+    </p>
+
+  </div>
+
+  <mat-action-row *ngIf="wallet.containerStatus === ContainerStatus.DELETED">
+    <form [formGroup]="form" (submit)="loadWallet()" *ngIf="!loading">
+      <mat-form-field>
+        <input matInput placeholder="Wallet password" required formControlName="password" type="password">
+      </mat-form-field>
+      <button mat-button color="primary" type="submit"><mat-icon>vpn_key</mat-icon> Unlock Wallet</button>
+    </form>
+    <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
+  </mat-action-row>
+
+  <mat-action-row *ngIf="wallet.containerStatus === ContainerStatus.RUNNING">
+    <button mat-button color="primary"><mat-icon>reply</mat-icon> Send Iridium</button>
+    <button mat-button color="primary"><mat-icon>list</mat-icon> Transactions</button>
+    <button mat-button color="primary"><mat-icon>vpn_key</mat-icon> Lock Wallet</button>
+  </mat-action-row>
+</mat-expansion-panel>

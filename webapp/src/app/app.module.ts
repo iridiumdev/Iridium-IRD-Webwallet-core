@@ -13,7 +13,7 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {SimpleWebStorageModule} from "@elderbyte/ngx-simple-webstorage";
-import {JwtAuthModule, RefreshStrategy, StorageType, TokenService} from "@elderbyte/ngx-jwt-auth";
+import {JwtAuthModule, RefreshStrategy, StorageType} from "@elderbyte/ngx-jwt-auth";
 import {HttpClient, HttpClientModule} from "@angular/common/http";
 import {LoggerFactory, LogLevel} from "@elderbyte/ts-logger";
 import {TranslateLoader, TranslateModule, TranslateService} from "@ngx-translate/core";
@@ -21,6 +21,7 @@ import {TranslateHttpLoader} from '@ngx-translate/http-loader';
 import {FlexLayoutModule} from "@angular/flex-layout";
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from "@angular/material";
 import {IsAuthenticatedDirective} from "./_directives/is-authenticated.directive";
+import {WalletModule} from "./wallet/wallet.module";
 
 // AoT requires an exported function for factories
 export function HttpLoaderFactory(httpClient: HttpClient) {
@@ -68,6 +69,7 @@ export function HttpLoaderFactory(httpClient: HttpClient) {
     }),
 
     HomeModule,
+    WalletModule,
 
     //exported in SharedModule
     MatButtonModule,

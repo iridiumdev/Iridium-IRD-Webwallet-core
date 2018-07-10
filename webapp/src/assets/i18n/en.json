@@ -16,6 +16,19 @@
       "register": {
         "title": "Register",
         "button": "Register"
+      },
+      "wallet": {
+        "title": "Wallets",
+        "button": "Wallets"
+      }
+    },
+    "wallet": {
+      "container": {
+        "status": {
+          "ERROR": "Error",
+          "DELETED": "Locked",
+          "RUNNING": "Unlocked"
+        }
       }
     }
   }
