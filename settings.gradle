@@ -1,4 +1,0 @@
-rootProject.name = 'webwallet-core'
-
-include ':server'
-include ':webapp'
