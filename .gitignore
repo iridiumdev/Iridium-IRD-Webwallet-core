@@ -1,10 +1,7 @@
-.gradle
-/build/
-/**/build/
-!gradle/wrapper/gradle-wrapper.jar
-
+/bin/
 webapp/dist/
 webapp/node_modules/
+/vendor/
 
 ### STS ###
 .apt_generated
