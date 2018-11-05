@@ -41,7 +41,7 @@ export function HttpLoaderFactory(httpClient: HttpClient) {
 
     FlexLayoutModule,
     HttpClientModule,
-    SimpleWebStorageModule.forRoot(),
+    SimpleWebStorageModule,
     JwtAuthModule.forRoot({
       localLoginRoute: '/login',
       accessDeniedRoute: '/denied',
