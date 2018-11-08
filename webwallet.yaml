@@ -1,0 +1,7 @@
+server:
+  address: ":3000"
+  staticLocation: "./webapp/dist/webapp"
+
+mongo:
+  address: "localhost:27017"
+  database: "iridium"
