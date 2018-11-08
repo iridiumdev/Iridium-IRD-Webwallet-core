@@ -1,5 +1,7 @@
 package wallet
 
+import "gopkg.in/mgo.v2/bson"
+
 type serviceImpl struct {
 }
 
@@ -19,7 +21,11 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO) (*Wallet, error) {
 	// TODO: daniel 08.11.18 - fetch address
 	// TODO: daniel 08.11.18 - build Wallet struct
 
-	wallet := &Wallet{Name: dto.Name}
+	wallet := &Wallet{
+		Id:   bson.NewObjectId(),
+		Name: dto.Name,
+	}
+
 	err := store.InsertWallet(wallet)
 
 	return wallet, err
