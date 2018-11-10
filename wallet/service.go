@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/iridiumdev/webwallet-core/config"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -32,9 +33,9 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO) (*Wallet, error) {
 		Name: dto.Name,
 	}
 
-	err := store.InsertWallet(wallet)
-
 	ctx := context.Background()
+
+	log.Infof("Creating new volume for wallet with id %s", wallet.Id.Hex())
 
 	vol, err := s.dockerClient.VolumeCreate(ctx, volume.VolumesCreateBody{
 		Name: fmt.Sprintf("%s.wallet", wallet.Id.Hex()),
@@ -43,6 +44,8 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO) (*Wallet, error) {
 	command := append(config.Get().Webwallet.Satellite.Command,
 		fmt.Sprintf("--container-password=%s", dto.Password),
 	)
+
+	log.Infof("Creating new container for wallet with id %s", wallet.Id.Hex())
 
 	resp, err := s.dockerClient.ContainerCreate(ctx, &container.Config{
 		Image: config.Get().Webwallet.Satellite.Image,
@@ -56,9 +59,15 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO) (*Wallet, error) {
 		return nil, err
 	}
 
+	log.Infof("Starting container for wallet with id %s", wallet.Id.Hex())
+
 	if err := s.dockerClient.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return nil, err
 	}
+
+	log.Infof("Started container for wallet with id %s", wallet.Id.Hex())
+
+	err = store.InsertWallet(wallet)
 
 	return wallet, err
 }
