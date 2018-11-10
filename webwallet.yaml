@@ -1,7 +1,16 @@
 server:
-  address: ":3000"
-  staticLocation: "./webapp/dist/webapp"
+  address: :3000
+  staticLocation: ./webapp/dist/webapp
 
 mongo:
-  address: "localhost:27017"
-  database: "iridium"
+  address: localhost:27017
+  database: iridium
+
+webwallet:
+  satellite:
+    image: iridiumdev/webwallet-satellite:latest
+    command:
+    - "--daemon-address=nodes.ird.cash"
+    - "--daemon-port=13007"
+    - "--data-dir=/data"
+    - "--container-file=/data/wallet"

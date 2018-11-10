@@ -3,13 +3,15 @@ package config
 import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"sync"
 )
 
 type Config struct {
-	Server Server `json:"server"`
-	Mongo  Mongo  `json:"server"`
+	Server    Server    `json:"server"`
+	Mongo     Mongo     `json:"mongo"`
+	Webwallet Webwallet `json:"webwallet"`
 }
 
 type Server struct {
@@ -22,6 +24,15 @@ type Mongo struct {
 	Database string `json:"database"`
 }
 
+type Webwallet struct {
+	Satellite Satellite `json:"satellite"`
+}
+
+type Satellite struct {
+	Image   string   `json:"image"`
+	Command []string `json:"command"`
+}
+
 var singleton *Config
 var once sync.Once
 
@@ -31,7 +42,7 @@ func Get() *Config {
 
 		viper.WatchConfig()
 		viper.OnConfigChange(func(e fsnotify.Event) {
-			fmt.Println("Config file changed:", e.Name)
+			log.Info("Config file changed: ", e.Name)
 			viper.Unmarshal(&singleton)
 		})
 	})
@@ -53,7 +64,7 @@ func initConfig() *Config {
 	var conf Config
 	viper.Unmarshal(&conf)
 
-	fmt.Printf("Using config: %s\n", viper.ConfigFileUsed())
+	log.Infof("Using config: %s\n", viper.ConfigFileUsed())
 
 	return &conf
 }
