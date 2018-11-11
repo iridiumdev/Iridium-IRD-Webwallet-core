@@ -52,3 +52,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/toorop/gin-logrus"
+
+[[constraint]]
+  name = "github.com/ybbus/jsonrpc"
+  version = "2.1.2"

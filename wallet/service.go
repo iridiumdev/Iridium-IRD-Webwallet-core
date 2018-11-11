@@ -8,8 +8,11 @@ import (
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/iridiumdev/webwallet-core/config"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/ybbus/jsonrpc"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 type serviceImpl struct {
@@ -25,8 +28,6 @@ var service Service
 
 // TODO: daniel 08.11.18 - implement
 func (s *serviceImpl) CreateWallet(dto CreateDTO) (*Wallet, error) {
-	// TODO: daniel 08.11.18 - fetch address
-	// TODO: daniel 08.11.18 - build Wallet struct
 
 	wallet := &Wallet{
 		Id:   bson.NewObjectId(),
@@ -73,9 +74,51 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO) (*Wallet, error) {
 
 	log.Infof("Started container for wallet with id '%s'", wallet.Id.Hex())
 
+	time.Sleep(1 * time.Second) // TODO: daniel 11.11.18 - please. no.
+
+	rpcClient, err := s.buildRpcClient(wallet.Id.Hex())
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := rpcClient.Call("getAddresses")
+	if err != nil {
+		return nil, err
+	}
+
+	result := struct {
+		Addresses []string `json:"addresses"`
+	}{}
+	response.GetObject(&result)
+
+	if len(result.Addresses) > 0 {
+		wallet.Address = result.Addresses[0]
+	} else {
+		return nil, errors.New("could not fetch wallet address!")
+	}
+
 	err = store.InsertWallet(wallet)
 
 	return wallet, err
+}
+
+func (s *serviceImpl) buildRpcClient(walletId string) (jsonrpc.RPCClient, error) {
+	containerEndpoint, err := s.resolveContainerEndpoint(walletId)
+	if err != nil {
+		return nil, err
+	}
+	rpcHost := fmt.Sprintf("%s:%s", containerEndpoint, config.Get().Webwallet.Satellite.RpcPort)
+	rpcAddress := fmt.Sprintf("http://%s/json_rpc", rpcHost)
+	log.Debugf("Connecting to %s wallets rpc client at: %s", walletId, rpcAddress)
+
+	//conn, err := net.DialTimeout("tcp", rpcHost, 10 * time.Second)
+	//if conn != nil {
+	//	conn.Close()
+	//}
+	//if err != nil {
+	//	return nil, err
+	//}
+	return jsonrpc.NewClient(rpcAddress), nil
 }
 
 // TODO: daniel 08.11.18 - implement
@@ -92,4 +135,21 @@ func (s *serviceImpl) ImportWallet(dto ImportDTO) (*Wallet, error) {
 
 func InitService(dockerClient *client.Client) {
 	service = &serviceImpl{dockerClient: dockerClient}
+}
+
+func (s *serviceImpl) resolveContainerEndpoint(containerId string) (string, error) {
+	ctx := context.Background()
+
+	if config.Get().Webwallet.InternalResolver {
+		return containerId, nil
+	} else {
+		log.Debugf("Using 'ip' resolver to get the satellites endpoint address")
+		inspect, err := s.dockerClient.ContainerInspect(ctx, containerId)
+		if err != nil {
+			return "", err
+		}
+
+		return inspect.NetworkSettings.Networks[config.Get().Webwallet.Network].IPAddress, nil
+	}
+
 }

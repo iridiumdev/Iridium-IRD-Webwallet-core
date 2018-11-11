@@ -7,7 +7,12 @@ mongo:
   database: iridium
 
 webwallet:
+  # docker network name to attach satellite containers to
   network: webwallet
+  # wether to use the internal docker container name to dns resolver or host ip addresses
+  # true: use the docker internal dns service and use the container name as hostname to communicate with the rpc api. The webwallet core has to run in the same docker network as the satellites!
+  # false: use the docker containers host ip address to communicate with the rpc api
+  internalResolver: false
   satellite:
     image: iridiumdev/webwallet-satellite:latest
     command:
@@ -15,3 +20,4 @@ webwallet:
     - "--daemon-port=13007"
     - "--data-dir=/data"
     - "--container-file=/data/wallet"
+    rpcPort: 14007

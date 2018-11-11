@@ -16,5 +16,5 @@ type ImportDTO struct {
 type Wallet struct {
 	Id      bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	Name    string        `json:"name" bson:"name"`
-	Address string        `json:"name" bson:"name"`
+	Address string        `json:"address" bson:"address"`
 }

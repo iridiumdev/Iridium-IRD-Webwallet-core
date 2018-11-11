@@ -14,6 +14,7 @@ import (
 func main() {
 
 	log.SetFormatter(&log.TextFormatter{})
+	log.SetLevel(log.TraceLevel)
 
 	mongoSession := initMongoClient()
 	dockerClient := initDockerClient()

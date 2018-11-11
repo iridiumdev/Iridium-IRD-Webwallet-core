@@ -25,13 +25,15 @@ type Mongo struct {
 }
 
 type Webwallet struct {
-	Network   string    `json:"network"`
-	Satellite Satellite `json:"satellite"`
+	Network          string    `json:"network"`
+	InternalResolver bool      `json:"internalResolver"`
+	Satellite        Satellite `json:"satellite"`
 }
 
 type Satellite struct {
 	Image   string   `json:"image"`
 	Command []string `json:"command"`
+	RpcPort string   `json:"command"`
 }
 
 var singleton *Config
