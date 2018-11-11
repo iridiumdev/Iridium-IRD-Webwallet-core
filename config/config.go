@@ -25,6 +25,7 @@ type Mongo struct {
 }
 
 type Webwallet struct {
+	Network   string    `json:"network"`
 	Satellite Satellite `json:"satellite"`
 }
 
