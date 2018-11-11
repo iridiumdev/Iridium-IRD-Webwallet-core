@@ -10,13 +10,18 @@ This is the Iridium webwallet server implementation (the core).
 - mongodb 4.x
 - node v10.2.x + npm v5.6.x
 - @angular/cli v7.0.x
+- docker v18.x
 
 #### Not yet, but later for sure
 - docker-compose v1.21.0+
 
 ### Running the server
 
-To build the frontend run:
+Create the docker network for the satellites:
+
+    docker network create webwallet
+
+Build the frontend with:
     
     npm install -g @angular/cli
     npm install
