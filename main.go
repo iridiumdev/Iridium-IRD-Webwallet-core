@@ -22,7 +22,12 @@ func main() {
 	initStores(mongoSession)
 	initServices(dockerClient)
 
-	initMainEngine()
+	engine, err := initMainEngine()
+	if err != nil {
+		panic(err)
+	}
+
+	engine.Run(config.Get().Server.Address)
 
 	defer mongoSession.Close()
 	defer dockerClient.Close()
@@ -89,7 +94,6 @@ func initMainEngine() (*gin.Engine, *gin.RouterGroup) {
 
 	initDependencyTree(api)
 
-	engine.Run(config.Get().Server.Address)
 	return engine, api
 }
 
