@@ -28,7 +28,7 @@ Build the frontend with:
     
     ng build --aot
 
-Start the mongodb, e.g. as a docker container:
+Run mongodb, e.g. as a docker container:
 
     docker run -d --name mongo -p 27017:27017 mvertes/alpine-mongo
 
@@ -37,3 +37,14 @@ To start the backend just run the main.go file:
 
     dep ensure
     go run main.go
+
+#### Running integration tests
+
+Run mongodb, e.g. as a docker container:
+
+    docker run -d --name mongo -p 27017:27017 mvertes/alpine-mongo
+    
+Run the go tests
+    
+    go test -v
+    
