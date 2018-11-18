@@ -4,6 +4,8 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/iridiumdev/gin-jwt"
+	"github.com/iridiumdev/webwallet-core/auth"
 	"github.com/iridiumdev/webwallet-core/config"
 	"github.com/iridiumdev/webwallet-core/wallet"
 	log "github.com/sirupsen/logrus"
@@ -22,10 +24,7 @@ func main() {
 	initStores(mongoSession)
 	initServices(dockerClient)
 
-	engine, err := initMainEngine()
-	if err != nil {
-		panic(err)
-	}
+	engine, _, _ := initMainEngine()
 
 	engine.Run(config.Get().Server.Address)
 
@@ -83,18 +82,24 @@ func initStores(session *mgo.Session) {
 
 }
 
-func initMainEngine() (*gin.Engine, *gin.RouterGroup) {
+func initMainEngine() (*gin.Engine, *gin.RouterGroup, *jwt.GinJWTMiddleware) {
 
 	engine := gin.Default()
+	authMiddleware := auth.InitMiddleware()
+
+	authApi := engine.Group("/auth")
+	authApi.POST("/login", authMiddleware.LoginHandler)
+	authApi.POST("/refresh", authMiddleware.RefreshHandler)
 
 	engine.Use(ginlogrus.Logger(log.StandardLogger()), gin.Recovery())
 
 	engine.Use(static.Serve("/", static.LocalFile(config.Get().Server.StaticLocation, true)))
 	api := engine.Group("/api/v1")
+	api.Use(authMiddleware.MiddlewareFunc())
 
 	initDependencyTree(api)
 
-	return engine, api
+	return engine, api, authMiddleware
 }
 
 func initDependencyTree(api *gin.RouterGroup) {

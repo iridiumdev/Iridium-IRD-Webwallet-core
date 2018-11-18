@@ -50,16 +50,19 @@ func FeatureContext(s *godog.Suite) {
 	initStores(mongoSession)
 	initServices(dockerClient)
 
-	engine, _ := initMainEngine()
+	engine, _, authMiddleware := initMainEngine()
 
 	ts := httptest.NewServer(engine)
 	apiFeature.BaseUrl = ts.URL
+	apiFeature.AuthMiddleware = authMiddleware
 
 	fmt.Print(ts.URL)
 
 	//s.BeforeScenario(func(interface{}) {
 	//
 	//})
+
+	s.Step(`^I am logged in as "([^"]*)"$`, apiFeature.IAmLoggedInAs)
 
 	s.Step(`^I send a (GET|DELETE) request to (\/[\S\/]*)$`, apiFeature.IDoARequest)
 	s.Step(`^I send a (POST|PUT) request to (\/[\S\/]*) with body:$`, apiFeature.IDoARequestWithBody)

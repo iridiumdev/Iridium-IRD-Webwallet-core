@@ -1,6 +1,8 @@
 Feature: wallet api - create/import wallets
 
   Scenario: Create a new wallet
+    # TODO: daniel 18.11.18 - change to actual username
+    Given I am logged in as "admin"
     When I send a POST request to /api/v1/wallets with body:
       """
       {
