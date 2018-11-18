@@ -45,10 +45,12 @@ export function HttpLoaderFactory(httpClient: HttpClient) {
     JwtAuthModule.forRoot({
       localLoginRoute: '/login',
       accessDeniedRoute: '/denied',
-      obtainTokenUrl: '/auth/token',
+      obtainTokenUrl: '/auth/login',
       refresh: {
         strategy: RefreshStrategy.ONDEMAND,
-        interval: 10000
+        // interval: 10000,
+        minTtl: 60000,
+        url: '/auth/refresh',
       },
       tokenStorage: {
         type: StorageType.LOCAL,
