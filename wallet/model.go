@@ -3,14 +3,14 @@ package wallet
 import "gopkg.in/mgo.v2/bson"
 
 type CreateDTO struct {
-	Password string
-	Name     string
+	Password string `json:"password"`
+	Name     string `json:"name"`
 }
 
 type ImportDTO struct {
 	CreateDTO
-	ViewSecretKey  string
-	SpendSecretKey string
+	ViewSecretKey  string `json:"viewSecretKey"`
+	SpendSecretKey string `json:"spendSecretKey"`
 }
 
 type Wallet struct {
