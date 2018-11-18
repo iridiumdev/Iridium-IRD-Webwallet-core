@@ -11,6 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/toorop/gin-logrus"
 	"gopkg.in/mgo.v2"
+	"net/http"
+	"strings"
 )
 
 func main() {
@@ -94,6 +96,19 @@ func initMainEngine() (*gin.Engine, *gin.RouterGroup, *jwt.GinJWTMiddleware) {
 	engine.Use(ginlogrus.Logger(log.StandardLogger()), gin.Recovery())
 
 	engine.Use(static.Serve("/", static.LocalFile(config.Get().Server.StaticLocation, true)))
+
+	engine.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/api") {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":  "That is not the API you are looking for.",
+				"status": http.StatusNotFound,
+			})
+		} else {
+			c.File(config.Get().Server.StaticLocation + "/index.html")
+		}
+	})
+
 	api := engine.Group("/api/v1")
 	api.Use(authMiddleware.MiddlewareFunc())
 
