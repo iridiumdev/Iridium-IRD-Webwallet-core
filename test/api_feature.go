@@ -17,9 +17,10 @@ type ApiFeature struct {
 	accessToken    string
 }
 
-func (a *ApiFeature) ResetResponse(interface{}) {
+func (a *ApiFeature) ResetResponse() (err error) {
 	a.resp = &resty.Response{}
 	a.jsonSpec = nil
+	return nil
 }
 
 func (a *ApiFeature) IAmLoggedInAs(username string) (err error) {
@@ -146,7 +147,7 @@ func (a *ApiFeature) TheResponseShouldBeAndMatchThisJson(status int, body *gherk
 
 func (a *ApiFeature) TheResponseShouldBe(status int) error {
 	if status != a.resp.StatusCode() {
-		return fmt.Errorf("expected response code to be: %d, but actual is: %d", status, a.resp.StatusCode())
+		return fmt.Errorf("expected response code to be: %d, but actual is: %d\n\nwith response body:\n%s", status, a.resp.StatusCode(), a.resp.Body())
 	}
 	return nil
 }

@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
+	"github.com/iridiumdev/webwallet-core/config"
 	"github.com/iridiumdev/webwallet-core/test"
+	"github.com/iridiumdev/webwallet-core/user"
 	"github.com/onsi/gomega"
 	"gopkg.in/resty.v1"
 	"net/http/httptest"
@@ -44,27 +45,31 @@ func FeatureContext(s *godog.Suite) {
 	resty.SetRedirectPolicy(resty.FlexibleRedirectPolicy(15))
 	resty.SetHeader("Content-Type", "application/json")
 
+	config.Get().Mongo.Database = "iridium-test"
+
 	mongoSession := initMongoClient()
 	dockerClient := initDockerClient()
 
-	initStores(mongoSession)
-	initServices(dockerClient)
+	s.BeforeScenario(func(interface{}) {
 
-	engine, _, authMiddleware := initMainEngine()
+		mongoSession.DB(config.Get().Mongo.Database).DropDatabase()
 
-	ts := httptest.NewServer(engine)
-	apiFeature.BaseUrl = ts.URL
-	apiFeature.AuthMiddleware = authMiddleware
+		initStores(mongoSession)
+		userService, _ := initServices(dockerClient)
 
-	fmt.Print(ts.URL)
+		engine, _, authMiddleware := initMainEngine(userService)
 
-	//s.BeforeScenario(func(interface{}) {
-	//
-	//})
+		ts := httptest.NewServer(engine)
+		apiFeature.BaseUrl = ts.URL
+		apiFeature.AuthMiddleware = authMiddleware
+
+		userService.CreateUser(user.User{Username: "testuser", Email: "test@ird.cash", Password: "secr3tPw"})
+	})
 
 	s.Step(`^I am logged in as "([^"]*)"$`, apiFeature.IAmLoggedInAs)
 
 	s.Step(`^I send a (GET|DELETE) request to (\/[\S\/]*)$`, apiFeature.IDoARequest)
+	s.Step(`^I reset the last response$`, apiFeature.ResetResponse)
 	s.Step(`^I send a (POST|PUT) request to (\/[\S\/]*) with body:$`, apiFeature.IDoARequestWithBody)
 	s.Step(`^the response should be (\d+) and match this json:$`, apiFeature.TheResponseShouldBeAndMatchThisJson)
 	s.Step(`^the response should be (\d+)$`, apiFeature.TheResponseShouldBe)

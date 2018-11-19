@@ -3,22 +3,13 @@ package auth
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/iridiumdev/gin-jwt"
+	"github.com/iridiumdev/webwallet-core/user"
+	"github.com/iridiumdev/webwallet-core/util"
+	"github.com/pkg/errors"
 	"time"
 )
 
-type login struct {
-	Username string `form:"username" json:"username" binding:"required"`
-	Password string `form:"password" json:"password" binding:"required"`
-}
-
-// User demo
-type User struct {
-	UserName  string
-	FirstName string
-	LastName  string
-}
-
-func InitMiddleware() *jwt.GinJWTMiddleware {
+func InitMiddleware(userService user.Service) *jwt.GinJWTMiddleware {
 
 	// the jwt middleware
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
@@ -28,45 +19,30 @@ func InitMiddleware() *jwt.GinJWTMiddleware {
 		Timeout:          5 * time.Minute,
 		MaxRefresh:       24 * time.Hour,
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
-			if v, ok := data.(*User); ok {
+			if v, ok := data.(*user.User); ok {
 				return jwt.MapClaims{
-					"id":   v.UserName,
-					"name": v.FirstName,
+					"id":       v.Id,
+					"username": v.Username,
 				}
 			}
 			return data.(jwt.MapClaims)
 		},
 		Authenticator: func(c *gin.Context) (interface{}, error) {
-			var loginVals login
-			if err := c.Bind(&loginVals); err != nil {
-				return "", jwt.ErrMissingLoginValues
-			}
-			userID := loginVals.Username
-			password := loginVals.Password
 
-			if (userID == "admin" && password == "admin") || (userID == "test" && password == "test") {
-				return &User{
-					UserName:  userID,
-					LastName:  "Bar",
-					FirstName: "Foo",
-				}, nil
+			var login user.Login
+			if err := c.Bind(&login); err != nil {
+				return nil, jwt.ErrMissingLoginValues
 			}
+			authUser, err := userService.AuthenticateUser(login)
+			if err != nil {
+				return nil, jwt.ErrFailedAuthentication
+			}
+			return authUser, nil
 
-			return nil, jwt.ErrFailedAuthentication
 		},
 		IdentityKey: "id",
-		Authorizator: func(data interface{}, c *gin.Context) bool {
-			if v, ok := data.(string); ok && v == "admin" {
-				return true
-			}
-
-			return false
-		},
 		Unauthorized: func(c *gin.Context, code int, message string) {
-			c.JSON(code, gin.H{
-				"code":    code,
-				"message": message,
-			})
+			util.HandleError(c, errors.New(message), code)
 		},
 		// TokenLookup is a string in the form of "<source>:<name>" that is used
 		// to extract token from the request.

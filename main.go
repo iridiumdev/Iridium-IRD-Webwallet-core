@@ -7,6 +7,7 @@ import (
 	"github.com/iridiumdev/gin-jwt"
 	"github.com/iridiumdev/webwallet-core/auth"
 	"github.com/iridiumdev/webwallet-core/config"
+	"github.com/iridiumdev/webwallet-core/user"
 	"github.com/iridiumdev/webwallet-core/wallet"
 	log "github.com/sirupsen/logrus"
 	"github.com/toorop/gin-logrus"
@@ -24,9 +25,9 @@ func main() {
 	dockerClient := initDockerClient()
 
 	initStores(mongoSession)
-	initServices(dockerClient)
+	userService, _ := initServices(dockerClient)
 
-	engine, _, _ := initMainEngine()
+	engine, _, _ := initMainEngine(userService)
 
 	engine.Run(config.Get().Server.Address)
 
@@ -72,22 +73,27 @@ func initMongoClient() *mgo.Session {
 	return session
 }
 
-func initServices(dockerClient *client.Client) {
+func initServices(dockerClient *client.Client) (user.Service, wallet.Service) {
 
-	wallet.InitService(dockerClient)
+	userService := user.InitService()
+
+	walletService := wallet.InitService(dockerClient)
+
+	return userService, walletService
 
 }
 
 func initStores(session *mgo.Session) {
 
-	wallet.InitStore(session.DB(config.Get().Mongo.Database))
+	wallet.InitStore(session.Clone().DB(config.Get().Mongo.Database))
+	user.InitStore(session.Clone().DB(config.Get().Mongo.Database))
 
 }
 
-func initMainEngine() (*gin.Engine, *gin.RouterGroup, *jwt.GinJWTMiddleware) {
+func initMainEngine(userService user.Service) (*gin.Engine, *gin.RouterGroup, *jwt.GinJWTMiddleware) {
 
 	engine := gin.Default()
-	authMiddleware := auth.InitMiddleware()
+	authMiddleware := auth.InitMiddleware(userService)
 
 	authApi := engine.Group("/auth")
 	authApi.POST("/login", authMiddleware.LoginHandler)
@@ -112,12 +118,15 @@ func initMainEngine() (*gin.Engine, *gin.RouterGroup, *jwt.GinJWTMiddleware) {
 	api := engine.Group("/api/v1")
 	api.Use(authMiddleware.MiddlewareFunc())
 
-	initDependencyTree(api)
+	initDependencyTree(api, authApi)
 
 	return engine, api, authMiddleware
 }
 
-func initDependencyTree(api *gin.RouterGroup) {
+func initDependencyTree(api *gin.RouterGroup, authApi *gin.RouterGroup) {
+	userController := user.NewController(api, authApi)
+	userController.Routes()
+
 	walletController := wallet.NewController(api)
 	walletController.Routes()
 }

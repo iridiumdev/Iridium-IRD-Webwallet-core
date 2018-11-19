@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/iridiumdev/webwallet-core/util"
 	"net/http"
 )
 
@@ -15,7 +16,7 @@ func NewController(apiRouter *gin.RouterGroup) Controller {
 
 // Routes registers this controllers sub-routing in the main apiRouter. It returns a RouterGroup containing only the
 // routes for the operations on the Wallet model.
-func (controller *Controller) Routes() *gin.RouterGroup {
+func (controller *Controller) Routes() {
 	api := controller.apiRouter.Group("/wallets")
 	{
 		api.POST("/", controller.postCreateHandler())
@@ -23,7 +24,6 @@ func (controller *Controller) Routes() *gin.RouterGroup {
 		api.GET("/", controller.getListHandler())
 		api.GET("/:id", controller.getHandler())
 	}
-	return api
 }
 
 // TODO: daniel 08.11.18 - implement handler
@@ -53,16 +53,8 @@ func (controller *Controller) postCreateHandler() gin.HandlerFunc {
 			wallet, err = service.ImportWallet(imp)
 		}
 
-		if !handleError(c, err, http.StatusBadRequest) {
+		if !util.HandleError(c, err, http.StatusBadRequest) {
 			c.JSON(http.StatusCreated, wallet)
 		}
 	}
-}
-
-func handleError(c *gin.Context, err error, statusCode int) bool {
-	if err != nil {
-		c.JSON(statusCode, gin.H{"error": err.Error()})
-		return true
-	}
-	return false
 }

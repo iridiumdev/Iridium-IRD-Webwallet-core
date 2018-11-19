@@ -133,8 +133,9 @@ func (s *serviceImpl) ImportWallet(dto ImportDTO) (*Wallet, error) {
 	return nil, nil
 }
 
-func InitService(dockerClient *client.Client) {
+func InitService(dockerClient *client.Client) Service {
 	service = &serviceImpl{dockerClient: dockerClient}
+	return service
 }
 
 func (s *serviceImpl) resolveContainerEndpoint(containerId string) (string, error) {

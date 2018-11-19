@@ -343,9 +343,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3f3a05ae0b95893d90b9b3b5afdb79a9b3d96e4e36e099d841ae602e4aca0da8"
+  digest = "1:001a4e7a40e50ff2ef32e2556bca50c4f77daa457db3ac6afc8bea9bb2122cfb"
   name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
+  packages = [
+    "bcrypt",
+    "blowfish",
+    "ssh/terminal",
+  ]
   pruneopts = "UT"
   revision = "e4dc69e5b2fd71dcaf8bd5d054eb936deb78d1fa"
 
@@ -473,6 +477,7 @@
     "github.com/tidwall/gjson",
     "github.com/toorop/gin-logrus",
     "github.com/ybbus/jsonrpc",
+    "golang.org/x/crypto/bcrypt",
     "gopkg.in/mgo.v2",
     "gopkg.in/mgo.v2/bson",
     "gopkg.in/resty.v1",
