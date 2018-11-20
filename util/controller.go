@@ -10,7 +10,7 @@ func HandleError(c *gin.Context, err error, statusCode int) bool {
 	return false
 }
 
-func HandleBindError(c *gin.Context, obj interface{}, statusCode int) bool {
+func BindAndHandleError(c *gin.Context, obj interface{}, statusCode int) bool {
 	err := c.Bind(obj)
 	if err != nil {
 		c.JSON(statusCode, gin.H{"error": err.Error()})

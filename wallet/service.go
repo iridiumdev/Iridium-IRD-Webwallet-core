@@ -20,18 +20,20 @@ type serviceImpl struct {
 }
 
 type Service interface {
-	CreateWallet(dto CreateDTO) (*Wallet, error)
-	ImportWallet(dto ImportDTO) (*Wallet, error)
+	CreateWallet(dto CreateDTO, userId string) (*Wallet, error)
+	ImportWallet(dto ImportDTO, userId string) (*Wallet, error)
+	GetWallets(userId string) ([]*Wallet, error)
 }
 
 var service Service
 
 // TODO: daniel 08.11.18 - implement
-func (s *serviceImpl) CreateWallet(dto CreateDTO) (*Wallet, error) {
+func (s *serviceImpl) CreateWallet(dto CreateDTO, userId string) (*Wallet, error) {
 
 	wallet := &Wallet{
-		Id:   bson.NewObjectId(),
-		Name: dto.Name,
+		Id:    bson.NewObjectId(),
+		Name:  dto.Name,
+		Owner: userId,
 	}
 
 	ctx := context.Background()
@@ -122,7 +124,7 @@ func (s *serviceImpl) buildRpcClient(walletId string) (jsonrpc.RPCClient, error)
 }
 
 // TODO: daniel 08.11.18 - implement
-func (s *serviceImpl) ImportWallet(dto ImportDTO) (*Wallet, error) {
+func (s *serviceImpl) ImportWallet(dto ImportDTO, userId string) (*Wallet, error) {
 	// TODO: daniel 08.11.18 - create docker volume
 	// TODO: daniel 08.11.18 - create docker container
 	// TODO: daniel 08.11.18 - create walletd file
@@ -131,6 +133,10 @@ func (s *serviceImpl) ImportWallet(dto ImportDTO) (*Wallet, error) {
 	// TODO: daniel 08.11.18 - build Wallet struct
 	// TODO: daniel 08.11.18 - save to db
 	return nil, nil
+}
+
+func (s *serviceImpl) GetWallets(userId string) ([]*Wallet, error) {
+	return store.FindWalletsByOwner(userId)
 }
 
 func InitService(dockerClient *client.Client) Service {

@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type mongoDb struct {
@@ -11,7 +12,7 @@ type mongoDb struct {
 
 type Store interface {
 	InsertWallet(wallet *Wallet) error
-	FindWallets() ([]*Wallet, error)
+	FindWalletsByOwner(userId string) ([]*Wallet, error)
 }
 
 var store Store
@@ -21,9 +22,9 @@ func (db *mongoDb) InsertWallet(wallet *Wallet) error {
 	return err
 }
 
-func (db *mongoDb) FindWallets() ([]*Wallet, error) {
+func (db *mongoDb) FindWalletsByOwner(userId string) ([]*Wallet, error) {
 	var results []*Wallet
-	err := db.wallets.Find(nil).All(&results)
+	err := db.wallets.Find(bson.M{"owner": userId}).All(&results)
 	return results, err
 }
 

@@ -15,15 +15,15 @@ export class WalletService {
   }
 
   getWalletList(): Observable<WalletContainer[]> {
-    return this.http.get<WalletContainer[]>('/api/wallets')
+    return this.http.get<WalletContainer[]>('/api/v1/wallets')
   }
 
   loadWallet(walletBase: WalletBase): Observable<WalletContainer> {
-    return this.http.post<WalletContainer>(`/api/wallets/${walletBase.address}`, walletBase)
+    return this.http.post<WalletContainer>(`/api/v1/wallets/${walletBase.address}`, walletBase)
   }
 
   getWalletStatus(address: string): Observable<WalletStatus> {
-    return this.http.get<WalletStatus>(`/api/wallets/${address}`)
+    return this.http.get<WalletStatus>(`/api/v1/wallets/${address}`)
   }
 
 }

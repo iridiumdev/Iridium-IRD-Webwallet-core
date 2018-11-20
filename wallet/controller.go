@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/iridiumdev/webwallet-core/auth"
 	"github.com/iridiumdev/webwallet-core/util"
 	"net/http"
 )
@@ -29,7 +30,10 @@ func (controller *Controller) Routes() {
 // TODO: daniel 08.11.18 - implement handler
 func (controller *Controller) getListHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, []string{})
+		userId := auth.ExtractUserId(c)
+		wallets, err := service.GetWallets(userId)
+		util.HandleError(c, err, http.StatusInternalServerError)
+		c.JSON(http.StatusOK, wallets)
 	}
 }
 
@@ -44,13 +48,16 @@ func (controller *Controller) getHandler() gin.HandlerFunc {
 func (controller *Controller) postCreateHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		imp := ImportDTO{}
-		c.ShouldBind(&imp)
+		util.BindAndHandleError(c, &imp, http.StatusBadRequest)
+
+		userId := auth.ExtractUserId(c)
+
 		var wallet *Wallet
 		var err error
 		if imp.SpendSecretKey == "" || imp.ViewSecretKey == "" {
-			wallet, err = service.CreateWallet(imp.CreateDTO)
+			wallet, err = service.CreateWallet(imp.CreateDTO, userId)
 		} else {
-			wallet, err = service.ImportWallet(imp)
+			wallet, err = service.ImportWallet(imp, userId)
 		}
 
 		if !util.HandleError(c, err, http.StatusBadRequest) {

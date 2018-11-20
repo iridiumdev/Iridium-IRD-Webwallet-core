@@ -68,9 +68,9 @@ func FeatureContext(s *godog.Suite) {
 
 	s.Step(`^I am logged in as "([^"]*)"$`, apiFeature.IAmLoggedInAs)
 
-	s.Step(`^I send a (GET|DELETE) request to (\/[\S\/]*)$`, apiFeature.IDoARequest)
+	s.Step(`^I send a (GET|DELETE) request to "([^"]*)"$`, apiFeature.IDoARequest)
 	s.Step(`^I reset the last response$`, apiFeature.ResetResponse)
-	s.Step(`^I send a (POST|PUT) request to (\/[\S\/]*) with body:$`, apiFeature.IDoARequestWithBody)
+	s.Step(`^I send a (POST|PUT) request to "([^"]*)" with body:$`, apiFeature.IDoARequestWithBody)
 	s.Step(`^the response should be (\d+) and match this json:$`, apiFeature.TheResponseShouldBeAndMatchThisJson)
 	s.Step(`^the response should be (\d+)$`, apiFeature.TheResponseShouldBe)
 

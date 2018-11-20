@@ -22,12 +22,11 @@ func (controller *Controller) Routes() {
 	controller.authRouter.POST("/register", controller.postRegisterHandler())
 }
 
-// TODO: daniel 08.11.18 - implement handler
 func (controller *Controller) postRegisterHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		user := User{}
-		util.HandleBindError(c, &user, http.StatusBadRequest)
+		util.BindAndHandleError(c, &user, http.StatusBadRequest)
 
 		_, err := service.CreateUser(user)
 		if err != nil {

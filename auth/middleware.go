@@ -6,12 +6,30 @@ import (
 	"github.com/iridiumdev/webwallet-core/user"
 	"github.com/iridiumdev/webwallet-core/util"
 	"github.com/pkg/errors"
+	"net/http"
 	"time"
 )
+
+const (
+	IdentityKey = "id"
+)
+
+func ExtractUserId(c *gin.Context) string {
+	userIdRaw := jwt.ExtractClaims(c)[IdentityKey]
+	if userIdRaw != nil && userIdRaw.(string) != "" {
+		return userIdRaw.(string)
+	} else {
+		e := jwt.ErrFailedAuthentication
+		util.HandleError(c, e, http.StatusUnauthorized)
+		panic(e)
+	}
+
+}
 
 func InitMiddleware(userService user.Service) *jwt.GinJWTMiddleware {
 
 	// the jwt middleware
+
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
 		Realm:            "IRD WebWallet",
 		SigningAlgorithm: "HS256",
@@ -21,8 +39,8 @@ func InitMiddleware(userService user.Service) *jwt.GinJWTMiddleware {
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
 			if v, ok := data.(*user.User); ok {
 				return jwt.MapClaims{
-					"id":       v.Id,
-					"username": v.Username,
+					IdentityKey: v.Id,
+					"username":  v.Username,
 				}
 			}
 			return data.(jwt.MapClaims)
@@ -40,7 +58,7 @@ func InitMiddleware(userService user.Service) *jwt.GinJWTMiddleware {
 			return authUser, nil
 
 		},
-		IdentityKey: "id",
+		IdentityKey: IdentityKey,
 		Unauthorized: func(c *gin.Context, code int, message string) {
 			util.HandleError(c, errors.New(message), code)
 		},

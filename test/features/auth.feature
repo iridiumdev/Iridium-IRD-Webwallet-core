@@ -1,7 +1,7 @@
 Feature: auth api - register & login
 
   Scenario: Register new user and login
-    When I send a POST request to /auth/register with body:
+    When I send a POST request to "/auth/register" with body:
       """
       {
           "username": "jdoe",
@@ -11,7 +11,7 @@ Feature: auth api - register & login
       """
     Then the response should be 201
     # register with the same username should fail
-    When I send a POST request to /auth/register with body:
+    When I send a POST request to "/auth/register" with body:
       """
       {
           "username": "jdoe",
@@ -26,7 +26,7 @@ Feature: auth api - register & login
       }
       """
     # register with short password should fail
-    When I send a POST request to /auth/register with body:
+    When I send a POST request to "/auth/register" with body:
       """
       {
           "username": "ndoe",
@@ -36,7 +36,7 @@ Feature: auth api - register & login
       """
     Then the response should be 400
     # login with previously registered user
-    When I send a POST request to /auth/login with body:
+    When I send a POST request to "/auth/login" with body:
       """
       {
           "username": "jdoe",
@@ -48,7 +48,7 @@ Feature: auth api - register & login
 
 
   Scenario: Successful login
-    When I send a POST request to /auth/login with body:
+    When I send a POST request to "/auth/login" with body:
       """
       {
           "username": "testuser",
@@ -69,7 +69,7 @@ Feature: auth api - register & login
       """
 
   Scenario: Failed login
-    When I send a POST request to /auth/login with body:
+    When I send a POST request to "/auth/login" with body:
       """
       {
           "username": "testuser",
