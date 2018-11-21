@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+type WalletdRPC interface {
+	Reset(viewSecretKey string) error
+	CreateAddress(spendSecretKey string) (string, error)
+	GetAddresses() ([]string, error)
+}
+
 type client struct {
 	address *url.URL
 	rpc     jsonrpc.RPCClient
@@ -32,16 +38,67 @@ func Walletd(address string) (WalletdRPC, error) {
 	}, nil
 }
 
-func (c *client) GetAddresses() (*GetAddressesResponse, error) {
-	response, err := c.rpc.Call("getAddresses")
+func (c *client) GetAddresses() ([]string, error) {
+	var response *jsonrpc.RPCResponse
+	var err error
+
+	response, err = c.rpc.Call("getAddresses")
 	if err != nil {
 		return nil, err
 	}
 
 	result := &GetAddressesResponse{}
 	err = response.GetObject(&result)
+	if err != nil {
+		err = response.Error
+	}
 
-	return result, err
+	return result.Addresses, err
+}
+func (c *client) CreateAddress(spendSecretKey string) (string, error) {
+	var response *jsonrpc.RPCResponse
+	var err error
+
+	params := struct {
+		SpendSecretKey string `json:"spendSecretKey"`
+	}{SpendSecretKey: spendSecretKey}
+	response, err = c.rpc.Call("createAddress", params)
+	if err != nil {
+		return "", err
+	}
+
+	result := &CreateAddressResponse{}
+	err = response.GetObject(&result)
+	if err != nil {
+		err = response.Error
+	}
+
+	return result.Address, err
+}
+
+func (c *client) Reset(viewSecretKey string) error {
+	var response *jsonrpc.RPCResponse
+	var err error
+
+	if viewSecretKey != "" {
+		params := struct {
+			ViewSecretKey string `json:"viewSecretKey"`
+		}{ViewSecretKey: viewSecretKey}
+		response, err = c.rpc.Call("reset", params)
+	} else {
+		response, err = c.rpc.Call("reset")
+	}
+
+	err = handleRPCError(response)
+
+	return err
+}
+
+func handleRPCError(response *jsonrpc.RPCResponse) error {
+	if response.Error != nil {
+		return response.Error
+	}
+	return nil
 }
 
 func buildRpcClient(address *url.URL) (jsonrpc.RPCClient, error) {

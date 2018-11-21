@@ -27,7 +27,11 @@ type Service interface {
 
 var service Service
 
-// TODO: daniel 08.11.18 - implement
+func InitService(dockerClient *client.Client) Service {
+	service = &serviceImpl{dockerClient: dockerClient}
+	return service
+}
+
 func (s *serviceImpl) CreateWallet(dto CreateDTO, userId string) (*Wallet, error) {
 
 	wallet := &Wallet{
@@ -48,13 +52,13 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO, userId string) (*Wallet, error
 		return nil, err
 	}
 
-	result, err := walletd.GetAddresses()
+	addresses, err := walletd.GetAddresses()
 	if err != nil {
 		return nil, err
 	}
 
-	if len(result.Addresses) > 0 {
-		wallet.Address = result.Addresses[0]
+	if len(addresses) > 0 {
+		wallet.Address = addresses[0]
 	} else {
 		return nil, errors.New("could not fetch wallet address!")
 	}
@@ -62,6 +66,44 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO, userId string) (*Wallet, error
 	err = store.InsertWallet(wallet)
 
 	return wallet, err
+}
+
+func (s *serviceImpl) ImportWallet(dto ImportDTO, userId string) (*Wallet, error) {
+
+	wallet := &Wallet{
+		Id:    bson.NewObjectId(),
+		Name:  dto.Name,
+		Owner: userId,
+	}
+
+	if err := s.createNewVolume(wallet); err != nil {
+		return nil, err
+	}
+	if err := s.instantiateContainer(wallet, dto.Password); err != nil {
+		return nil, err
+	}
+
+	walletd, err := s.newWalletdClient(wallet.Id.Hex())
+	if err != nil {
+		return nil, err
+	}
+
+	if err := walletd.Reset(dto.ViewSecretKey); err != nil {
+		return nil, err
+	}
+	address, err := walletd.CreateAddress(dto.SpendSecretKey)
+	if err != nil {
+		return nil, err
+	}
+
+	wallet.Address = address
+	err = store.InsertWallet(wallet)
+
+	return wallet, err
+}
+
+func (s *serviceImpl) GetWallets(userId string) ([]*Wallet, error) {
+	return store.FindWalletsByOwner(userId)
 }
 
 func (s *serviceImpl) createNewVolume(wallet *Wallet) error {
@@ -123,27 +165,6 @@ func (s *serviceImpl) newWalletdClient(walletId string) (iridium.WalletdRPC, err
 	rpcAddress := fmt.Sprintf("http://%s/json_rpc", rpcHost)
 
 	return iridium.Walletd(rpcAddress)
-}
-
-// TODO: daniel 08.11.18 - implement
-func (s *serviceImpl) ImportWallet(dto ImportDTO, userId string) (*Wallet, error) {
-	// TODO: daniel 08.11.18 - create docker volume
-	// TODO: daniel 08.11.18 - create docker container
-	// TODO: daniel 08.11.18 - create walletd file
-	// TODO: daniel 08.11.18 - import wallet from keys in walletd
-	// TODO: daniel 08.11.18 - fetch address
-	// TODO: daniel 08.11.18 - build Wallet struct
-	// TODO: daniel 08.11.18 - save to db
-	return nil, nil
-}
-
-func (s *serviceImpl) GetWallets(userId string) ([]*Wallet, error) {
-	return store.FindWalletsByOwner(userId)
-}
-
-func InitService(dockerClient *client.Client) Service {
-	service = &serviceImpl{dockerClient: dockerClient}
-	return service
 }
 
 func (s *serviceImpl) resolveContainerEndpoint(containerId string) (string, error) {

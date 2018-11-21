@@ -16,8 +16,9 @@ webwallet:
   satellite:
     image: iridiumdev/webwallet-satellite:latest
     command:
-    - "--daemon-address=nodes.ird.cash"
-    - "--daemon-port=13007"
+    - "--testnet"
+    - "--daemon-address=178.33.231.97"
+    - "--daemon-port=13100"
     - "--data-dir=/data"
     - "--container-file=/data/wallet"
     rpcPort: 14007
