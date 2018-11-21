@@ -8,12 +8,11 @@ import (
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/iridiumdev/webwallet-core/config"
+	"github.com/iridiumdev/webwallet-core/iridium"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/ybbus/jsonrpc"
 	"gopkg.in/mgo.v2/bson"
 	"net"
-	"time"
 )
 
 type serviceImpl struct {
@@ -37,60 +36,22 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO, userId string) (*Wallet, error
 		Owner: userId,
 	}
 
-	ctx := context.Background()
+	if err := s.createNewVolume(wallet); err != nil {
+		return nil, err
+	}
+	if err := s.instantiateContainer(wallet, dto.Password); err != nil {
+		return nil, err
+	}
 
-	log.Infof("Creating new volume for wallet with id '%s'", wallet.Id.Hex())
-
-	vol, err := s.dockerClient.VolumeCreate(ctx, volume.VolumesCreateBody{
-		Name: fmt.Sprintf("%s.wallet", wallet.Id.Hex()),
-	})
-
-	command := append(config.Get().Webwallet.Satellite.Command,
-		fmt.Sprintf("--container-password=%s", dto.Password),
-	)
-
-	log.Infof("Creating new container for wallet with id '%s'", wallet.Id.Hex())
-
-	resp, err := s.dockerClient.ContainerCreate(ctx, &container.Config{
-		Image: config.Get().Webwallet.Satellite.Image,
-		Cmd:   command,
-		Volumes: map[string]struct{}{
-			fmt.Sprintf("%s:/data", vol.Name): {},
-		},
-	}, nil, nil, wallet.Id.Hex())
-
+	walletd, err := s.newWalletdClient(wallet.Id.Hex())
 	if err != nil {
 		return nil, err
 	}
 
-	log.Infof("Attaching network '%s' to container for wallet with id '%s'", config.Get().Webwallet.Network, wallet.Id.Hex())
-
-	if err := s.dockerClient.NetworkConnect(ctx, config.Get().Webwallet.Network, wallet.Id.Hex(), nil); err != nil {
-		return nil, err
-	}
-
-	log.Infof("Starting container for wallet with id '%s'", wallet.Id.Hex())
-
-	if err := s.dockerClient.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		return nil, err
-	}
-
-	log.Infof("Started container for wallet with id '%s'", wallet.Id.Hex())
-
-	rpcClient, err := s.buildRpcClient(wallet.Id.Hex())
+	result, err := walletd.GetAddresses()
 	if err != nil {
 		return nil, err
 	}
-
-	response, err := rpcClient.Call("getAddresses")
-	if err != nil {
-		return nil, err
-	}
-
-	result := struct {
-		Addresses []string `json:"addresses"`
-	}{}
-	response.GetObject(&result)
 
 	if len(result.Addresses) > 0 {
 		wallet.Address = result.Addresses[0]
@@ -103,50 +64,65 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO, userId string) (*Wallet, error
 	return wallet, err
 }
 
-func (s *serviceImpl) buildRpcClient(walletId string) (jsonrpc.RPCClient, error) {
+func (s *serviceImpl) createNewVolume(wallet *Wallet) error {
+	ctx := context.Background()
+
+	log.Infof("Creating new volume for wallet with id '%s'", wallet.Id.Hex())
+	_, err := s.dockerClient.VolumeCreate(ctx, volume.VolumesCreateBody{
+		Name: fmt.Sprintf("%s.wallet", wallet.Id.Hex()),
+	})
+	if err != nil {
+		return err
+	}
+	log.Debugf("Created new volume for wallet with id '%s' successfully!", wallet.Id.Hex())
+	return nil
+}
+
+func (s *serviceImpl) instantiateContainer(wallet *Wallet, password string) error {
+	ctx := context.Background()
+
+	command := append(config.Get().Webwallet.Satellite.Command,
+		fmt.Sprintf("--container-password=%s", password),
+	)
+
+	_, err := s.dockerClient.ContainerCreate(ctx, &container.Config{
+		Image: config.Get().Webwallet.Satellite.Image,
+		Cmd:   command,
+		Volumes: map[string]struct{}{
+			fmt.Sprintf("%s:/data", fmt.Sprintf("%s.wallet", wallet.Id.Hex())): {},
+		},
+	}, nil, nil, wallet.Id.Hex())
+
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Attaching network '%s' to container for wallet with id '%s'", config.Get().Webwallet.Network, wallet.Id.Hex())
+
+	if err := s.dockerClient.NetworkConnect(ctx, config.Get().Webwallet.Network, wallet.Id.Hex(), nil); err != nil {
+		return err
+	}
+
+	log.Infof("Starting container for wallet with id '%s'", wallet.Id.Hex())
+
+	if err := s.dockerClient.ContainerStart(ctx, wallet.Id.Hex(), types.ContainerStartOptions{}); err != nil {
+		return err
+	}
+
+	log.Debugf("Started container for wallet with id '%s'", wallet.Id.Hex())
+
+	return nil
+}
+
+func (s *serviceImpl) newWalletdClient(walletId string) (iridium.WalletdRPC, error) {
 	containerEndpoint, err := s.resolveContainerEndpoint(walletId)
 	if err != nil {
 		return nil, err
 	}
 	rpcHost := net.JoinHostPort(containerEndpoint, config.Get().Webwallet.Satellite.RpcPort)
 	rpcAddress := fmt.Sprintf("http://%s/json_rpc", rpcHost)
-	log.Debugf("Connecting to %s wallets rpc client at: %s", walletId, rpcAddress)
 
-	startTime := time.Now()
-
-	c := make(chan bool)
-	quit := make(chan bool)
-	go func() {
-		for {
-			select {
-			case <-quit:
-				return
-			default:
-				conn, _ := net.DialTimeout("tcp", rpcHost, 100*time.Millisecond)
-				if conn != nil {
-					conn.Close()
-					c <- true
-					return
-				}
-			}
-
-		}
-
-	}()
-
-	timeout := time.Duration(5) * time.Second
-	fmt.Printf("Wait for waitgroup (up to %s)\n", timeout)
-	select {
-	case <-c:
-		elapsedTime := time.Since(startTime)
-		log.Debugf("RPC Connection to wallet %s succeeded after %s at: %s", walletId, elapsedTime, rpcHost)
-	case <-time.After(timeout):
-		quit <- true
-		log.Errorf("RPC Connection to wallet %s timed out after %s at: %s", walletId, timeout, rpcHost)
-		return nil, errors.New("rpc connection timeout")
-	}
-
-	return jsonrpc.NewClient(rpcAddress), nil
+	return iridium.Walletd(rpcAddress)
 }
 
 // TODO: daniel 08.11.18 - implement
