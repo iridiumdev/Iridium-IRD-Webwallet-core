@@ -21,7 +21,6 @@ Feature: wallet api - create/import wallets
       }
       """
 
-  @ignore
   Scenario: Import a wallet from keys
     When I send a POST request to "/api/v1/wallets" with body:
       """
