@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/ybbus/jsonrpc"
 	"gopkg.in/mgo.v2/bson"
+	"net"
 	"time"
 )
 
@@ -76,8 +77,6 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO, userId string) (*Wallet, error
 
 	log.Infof("Started container for wallet with id '%s'", wallet.Id.Hex())
 
-	time.Sleep(1 * time.Second) // TODO: daniel 11.11.18 - please. no.
-
 	rpcClient, err := s.buildRpcClient(wallet.Id.Hex())
 	if err != nil {
 		return nil, err
@@ -109,17 +108,44 @@ func (s *serviceImpl) buildRpcClient(walletId string) (jsonrpc.RPCClient, error)
 	if err != nil {
 		return nil, err
 	}
-	rpcHost := fmt.Sprintf("%s:%s", containerEndpoint, config.Get().Webwallet.Satellite.RpcPort)
+	rpcHost := net.JoinHostPort(containerEndpoint, config.Get().Webwallet.Satellite.RpcPort)
 	rpcAddress := fmt.Sprintf("http://%s/json_rpc", rpcHost)
 	log.Debugf("Connecting to %s wallets rpc client at: %s", walletId, rpcAddress)
 
-	//conn, err := net.DialTimeout("tcp", rpcHost, 10 * time.Second)
-	//if conn != nil {
-	//	conn.Close()
-	//}
-	//if err != nil {
-	//	return nil, err
-	//}
+	startTime := time.Now()
+
+	c := make(chan bool)
+	quit := make(chan bool)
+	go func() {
+		for {
+			select {
+			case <-quit:
+				return
+			default:
+				conn, _ := net.DialTimeout("tcp", rpcHost, 100*time.Millisecond)
+				if conn != nil {
+					conn.Close()
+					c <- true
+					return
+				}
+			}
+
+		}
+
+	}()
+
+	timeout := time.Duration(5) * time.Second
+	fmt.Printf("Wait for waitgroup (up to %s)\n", timeout)
+	select {
+	case <-c:
+		elapsedTime := time.Since(startTime)
+		log.Debugf("RPC Connection to wallet %s succeeded after %s at: %s", walletId, elapsedTime, rpcHost)
+	case <-time.After(timeout):
+		quit <- true
+		log.Errorf("RPC Connection to wallet %s timed out after %s at: %s", walletId, timeout, rpcHost)
+		return nil, errors.New("rpc connection timeout")
+	}
+
 	return jsonrpc.NewClient(rpcAddress), nil
 }
 
