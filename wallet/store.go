@@ -12,7 +12,8 @@ type mongoDb struct {
 
 type Store interface {
 	InsertWallet(wallet *Wallet) error
-	FindWalletsByOwner(userId string) ([]*Wallet, error)
+	FindWalletsByOwner(userId bson.ObjectId) ([]*Wallet, error)
+	FindWalletByOwner(walletId bson.ObjectId, userId bson.ObjectId) (*Wallet, error)
 }
 
 var store Store
@@ -22,10 +23,16 @@ func (db *mongoDb) InsertWallet(wallet *Wallet) error {
 	return err
 }
 
-func (db *mongoDb) FindWalletsByOwner(userId string) ([]*Wallet, error) {
+func (db *mongoDb) FindWalletsByOwner(userId bson.ObjectId) ([]*Wallet, error) {
 	var results []*Wallet
 	err := db.wallets.Find(bson.M{"owner": userId}).All(&results)
 	return results, err
+}
+
+func (db *mongoDb) FindWalletByOwner(walletId bson.ObjectId, userId bson.ObjectId) (*Wallet, error) {
+	var result *Wallet
+	err := db.wallets.Find(bson.M{"_id": walletId, "owner": userId}).One(&result)
+	return result, err
 }
 
 func InitStore(db *mgo.Database) {

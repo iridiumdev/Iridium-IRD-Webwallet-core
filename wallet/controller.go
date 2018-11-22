@@ -24,24 +24,44 @@ func (controller *Controller) Routes() {
 
 		api.GET("/", controller.getListHandler())
 		api.GET("/:id", controller.getHandler())
+		api.POST("/:id/instance", controller.postInstanceHandler())
 	}
 }
 
-// TODO: daniel 08.11.18 - implement handler
 func (controller *Controller) getListHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userId := auth.ExtractUserId(c)
 		wallets, err := service.GetWallets(userId)
-		util.HandleError(c, err, http.StatusInternalServerError)
-		c.JSON(http.StatusOK, wallets)
+		if !handleWalletErrors(c, err) {
+			c.JSON(http.StatusOK, wallets)
+		}
 	}
 }
 
-// TODO: daniel 08.11.18 - implement handler
 func (controller *Controller) getHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		//id, _ := strconv.Atoi(c.Param("id"))
-		c.JSON(http.StatusOK, struct{}{})
+		userId := auth.ExtractUserId(c)
+		walletId := c.Param("id")
+
+		wallet, err := service.GetWallet(walletId, userId)
+		if !handleWalletErrors(c, err) {
+			c.JSON(http.StatusOK, wallet)
+		}
+	}
+}
+
+func (controller *Controller) postInstanceHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userId := auth.ExtractUserId(c)
+		walletId := c.Param("id")
+
+		dto := PasswordDTO{}
+		util.BindAndHandleError(c, &dto, http.StatusBadRequest)
+
+		wallet, err := service.StartWallet(walletId, dto.Password, userId)
+		if !handleWalletErrors(c, err) {
+			c.JSON(http.StatusCreated, wallet)
+		}
 	}
 }
 
@@ -52,7 +72,7 @@ func (controller *Controller) postCreateHandler() gin.HandlerFunc {
 
 		userId := auth.ExtractUserId(c)
 
-		var wallet *Wallet
+		var wallet *DetailedWallet
 		var err error
 		if imp.SpendSecretKey == "" || imp.ViewSecretKey == "" {
 			wallet, err = service.CreateWallet(imp.CreateDTO, userId)
@@ -60,8 +80,20 @@ func (controller *Controller) postCreateHandler() gin.HandlerFunc {
 			wallet, err = service.ImportWallet(imp, userId)
 		}
 
-		if !util.HandleError(c, err, http.StatusBadRequest) {
+		if !handleWalletErrors(c, err) {
 			c.JSON(http.StatusCreated, wallet)
 		}
 	}
+}
+
+func handleWalletErrors(c *gin.Context, err error) bool {
+	if err == ErrWalletNotFound {
+		return util.HandleError(c, err, http.StatusNotFound)
+	}
+	if err == ErrWalletNotRunning {
+		return util.HandleError(c, err, http.StatusFailedDependency)
+	}
+
+	return util.HandleError(c, err, http.StatusBadRequest)
+
 }

@@ -11,8 +11,11 @@ import (
 
 type WalletdRPC interface {
 	Reset(viewSecretKey string) error
+	Save() error
 	CreateAddress(spendSecretKey string) (string, error)
 	GetAddresses() ([]string, error)
+	GetStatus() (GetStatusResponse, error)
+	GetBalance() (GetBalanceResponse, error)
 }
 
 type client struct {
@@ -55,6 +58,7 @@ func (c *client) GetAddresses() ([]string, error) {
 
 	return result.Addresses, err
 }
+
 func (c *client) CreateAddress(spendSecretKey string) (string, error) {
 	var response *jsonrpc.RPCResponse
 	var err error
@@ -89,7 +93,51 @@ func (c *client) Reset(viewSecretKey string) error {
 		response, err = c.rpc.Call("reset")
 	}
 
-	err = handleRPCError(response)
+	if err == nil {
+		err = handleRPCError(response)
+	}
+
+	return err
+}
+
+func (c *client) Save() error {
+	var response *jsonrpc.RPCResponse
+	var err error
+
+	response, err = c.rpc.Call("save")
+
+	if err == nil {
+		err = handleRPCError(response)
+	}
+
+	return err
+}
+
+func (c *client) GetStatus() (GetStatusResponse, error) {
+	result := GetStatusResponse{}
+	err := c.callAndUnwrap("getStatus", &result)
+	return result, err
+}
+
+func (c *client) GetBalance() (GetBalanceResponse, error) {
+	result := GetBalanceResponse{}
+	err := c.callAndUnwrap("getBalance", &result)
+	return result, err
+}
+
+func (c *client) callAndUnwrap(method string, result interface{}) error {
+	var response *jsonrpc.RPCResponse
+	var err error
+
+	response, err = c.rpc.Call(method)
+	if err != nil {
+		return err
+	}
+
+	err = response.GetObject(result)
+	if err == nil {
+		err = handleRPCError(response)
+	}
 
 	return err
 }

@@ -34,7 +34,7 @@ func InitMiddleware(userService user.Service) *jwt.GinJWTMiddleware {
 		Realm:            "IRD WebWallet",
 		SigningAlgorithm: "HS256",
 		Key:              []byte("secret key"), // TODO: daniel 18.11.18 - change it to be really secret ;)
-		Timeout:          5 * time.Minute,
+		Timeout:          30 * time.Minute,
 		MaxRefresh:       24 * time.Hour,
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
 			if v, ok := data.(*user.User); ok {
