@@ -31,9 +31,10 @@ type Webwallet struct {
 }
 
 type Satellite struct {
-	Image   string   `json:"image"`
-	Command []string `json:"command"`
-	RpcPort string   `json:"command"`
+	Image   string            `json:"image"`
+	Command []string          `json:"command"`
+	RpcPort string            `json:"command"`
+	Labels  map[string]string `json:"labels"`
 }
 
 var singleton *Config

@@ -200,6 +200,10 @@ func (s *serviceImpl) checkRunning(wallet *Wallet) error {
 	listFilters.Add("name", wallet.Id.Hex())
 	listFilters.Add("status", "running")
 
+	for k, v := range config.Get().Webwallet.Satellite.Labels {
+		listFilters.Add("label", fmt.Sprintf("%s=%s", k, v))
+	}
+
 	cList, err := s.dockerClient.ContainerList(ctx, types.ContainerListOptions{
 		Limit:   1,
 		Filters: listFilters,
@@ -221,7 +225,8 @@ func (s *serviceImpl) createNewVolume(wallet *Wallet) error {
 
 	log.Infof("Creating new volume for wallet with id '%s'", wallet.Id.Hex())
 	_, err := s.dockerClient.VolumeCreate(ctx, volume.VolumesCreateBody{
-		Name: fmt.Sprintf("%s.wallet", wallet.Id.Hex()),
+		Name:   fmt.Sprintf("%s.wallet", wallet.Id.Hex()),
+		Labels: config.Get().Webwallet.Satellite.Labels,
 	})
 	if err != nil {
 		return err
@@ -239,8 +244,9 @@ func (s *serviceImpl) instantiateContainer(wallet *Wallet, password string) (*Lo
 
 	volumeName := fmt.Sprintf("%s.wallet", wallet.Id.Hex())
 	_, err := s.dockerClient.ContainerCreate(ctx, &container.Config{
-		Image: config.Get().Webwallet.Satellite.Image,
-		Cmd:   command,
+		Image:  config.Get().Webwallet.Satellite.Image,
+		Cmd:    command,
+		Labels: config.Get().Webwallet.Satellite.Labels,
 	}, &container.HostConfig{
 		Mounts: []mount.Mount{
 			{

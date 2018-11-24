@@ -22,3 +22,5 @@ webwallet:
     - "--data-dir=/data"
     - "--container-file=/data/wallet"
     rpcPort: 14007
+    labels:
+    - tag: "satellite"

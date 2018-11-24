@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"fmt"
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 	"github.com/iridiumdev/webwallet-core/config"
 	"github.com/iridiumdev/webwallet-core/test"
 	"github.com/iridiumdev/webwallet-core/user"
@@ -46,9 +51,15 @@ func FeatureContext(s *godog.Suite) {
 	resty.SetHeader("Content-Type", "application/json")
 
 	config.Get().Mongo.Database = "iridium-test"
+	config.Get().Webwallet.Satellite.Labels["net"] = "testnet"
+	labels := config.Get().Webwallet.Satellite.Labels
 
 	mongoSession := initMongoClient()
 	dockerClient := initDockerClient()
+
+	s.BeforeSuite(func() {
+		pruneTestWallets(dockerClient, labels)
+	})
 
 	s.BeforeScenario(func(scenarioArg interface{}) {
 
@@ -74,6 +85,10 @@ func FeatureContext(s *godog.Suite) {
 
 	})
 
+	s.AfterSuite(func() {
+		pruneTestWallets(dockerClient, labels)
+	})
+
 	s.Step(`^I am logged in as "([^"]*)"$`, apiFeature.IAmLoggedInAs)
 
 	s.Step(`^I send a (GET|DELETE) request to "([^"]*)"$`, apiFeature.IDoARequest)
@@ -83,4 +98,41 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the response should be (\d+)$`, apiFeature.TheResponseShouldBe)
 
 	s.Step(`^I keep the JSON response at "([^"]*)" as "([^"]*)"$`, apiFeature.KeepJSONResponseAt)
+}
+
+func pruneTestWallets(dockerClient *client.Client, labels map[string]string) {
+
+	ctx := context.Background()
+
+	listFilters := filters.NewArgs()
+
+	for k, v := range labels {
+		listFilters.Add("label", fmt.Sprintf("%s=%s", k, v))
+	}
+
+	cList, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{
+		Limit:   -1,
+		Filters: listFilters,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, container := range cList {
+
+		err = dockerClient.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{
+			RemoveVolumes: true,
+			Force:         true,
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		vol := container.Mounts[0].Name
+		err = dockerClient.VolumeRemove(ctx, vol, true)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 }
