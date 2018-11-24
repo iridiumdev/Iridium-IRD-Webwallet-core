@@ -90,6 +90,7 @@ func FeatureContext(s *godog.Suite) {
 	})
 
 	s.Step(`^I am logged in as "([^"]*)"$`, apiFeature.IAmLoggedInAs)
+	s.Step(`^I create a test wallet with name "([^"]*)" and password "([^"]*)"$`, apiFeature.ICreateATestWalletWithNameAndPassword)
 
 	s.Step(`^I send a (GET|DELETE) request to "([^"]*)"$`, apiFeature.IDoARequest)
 	s.Step(`^I reset the last response$`, apiFeature.ResetResponse)

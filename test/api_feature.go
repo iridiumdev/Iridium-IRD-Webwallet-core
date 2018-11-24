@@ -6,8 +6,10 @@ import (
 	"github.com/DATA-DOG/godog/gherkin"
 	"github.com/iridiumdev/gin-jwt"
 	"github.com/iridiumdev/webwallet-core/user"
+	"github.com/iridiumdev/webwallet-core/wallet"
 	"github.com/onsi/gomega"
 	"gopkg.in/resty.v1"
+	"net/http"
 )
 
 type ApiFeature struct {
@@ -37,6 +39,23 @@ func (a *ApiFeature) IAmLoggedInAs(username string) (err error) {
 	a.authContext = currentUser
 
 	return
+}
+
+func (a *ApiFeature) ICreateATestWalletWithNameAndPassword(name string, password string) (err error) {
+
+	c := wallet.CreateDTO{}
+	c.Name = name
+	c.Password = password
+
+	dto, err := json.Marshal(c)
+
+	err = a.IDoARequestWithBody(http.MethodPost, "/api/v1/wallets", &gherkin.DocString{
+		Content: string(dto),
+	})
+
+	err = a.TheResponseShouldBe(http.StatusCreated)
+
+	return err
 }
 
 func (a *ApiFeature) KeepJSONResponseAt(path string, name string) (err error) {

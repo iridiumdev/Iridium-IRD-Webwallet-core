@@ -2,22 +2,8 @@ Feature: wallet api - get wallets
 
   Scenario: Get all wallets for current user
     Given I am logged in as "testuser"
-    And I send a POST request to "/api/v1/wallets" with body:
-      """
-      {
-          "name": "FooWallet",
-          "password": "s3cr3tpa$$"
-      }
-      """
-    And the response should be 201
-    And I send a POST request to "/api/v1/wallets" with body:
-      """
-      {
-          "name": "BarWallet",
-          "password": "s3cr3tpa$$"
-      }
-      """
-    And the response should be 201
+    And I create a test wallet with name "FooWallet" and password "s3cr3tpa$$"
+    And I create a test wallet with name "BarWallet" and password "s3cr3tpa$$"
     When I send a GET request to "/api/v1/wallets"
     And I keep the JSON response at "0.id" as "id0"
     And I keep the JSON response at "0.address" as "address0"
