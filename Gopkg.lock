@@ -464,6 +464,8 @@
     "github.com/DATA-DOG/godog/gherkin",
     "github.com/docker/docker/api/types",
     "github.com/docker/docker/api/types/container",
+    "github.com/docker/docker/api/types/filters",
+    "github.com/docker/docker/api/types/mount",
     "github.com/docker/docker/api/types/volume",
     "github.com/docker/docker/client",
     "github.com/fsnotify/fsnotify",
