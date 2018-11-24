@@ -50,7 +50,7 @@ func FeatureContext(s *godog.Suite) {
 	mongoSession := initMongoClient()
 	dockerClient := initDockerClient()
 
-	s.BeforeScenario(func(interface{}) {
+	s.BeforeScenario(func(scenarioArg interface{}) {
 
 		mongoSession.DB(config.Get().Mongo.Database).DropDatabase()
 
@@ -63,7 +63,15 @@ func FeatureContext(s *godog.Suite) {
 		apiFeature.BaseUrl = ts.URL
 		apiFeature.AuthMiddleware = authMiddleware
 
-		userService.CreateUser(user.User{Username: "testuser", Email: "test@ird.cash", Password: "secr3tPw"})
+		testuser, _ := userService.CreateUser(user.User{Username: "testuser", Email: "test@ird.cash", Password: "secr3tPw"})
+
+		apiFeature.TestUsers = map[string]*user.User{
+			"testuser": testuser,
+		}
+
+		//scenario := scenarioArg.(*gherkin.Scenario)
+		//scenario.Tags
+
 	})
 
 	s.Step(`^I am logged in as "([^"]*)"$`, apiFeature.IAmLoggedInAs)

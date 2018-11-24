@@ -11,17 +11,31 @@ Feature: wallet api - create/import wallets
       """
     And I keep the JSON response at "id" as "id"
     And I keep the JSON response at "address" as "address"
+    And I keep the JSON response at "blockHeight.top" as "blockHeightTop"
+    And I keep the JSON response at "blockHeight.current" as "blockHeightCurrent"
+    And I keep the JSON response at "peerCount" as "peerCount"
     Then the response should be 201 and match this json:
       """
       {
           "id": ${id},
           "name": "FooWallet",
           "address": ${address},
-          "owner": "testuser"
+          "owner": ${testuser.id},
+          "status": "RUNNING",
+          "balance": {
+            "total": 0,
+            "locked": 0
+          },
+          "blockHeight": {
+            "current": ${blockHeightCurrent},
+            "top": ${blockHeightTop}
+          },
+          "peerCount": ${peerCount}
       }
       """
 
   Scenario: Import a wallet from keys
+    Given I am logged in as "testuser"
     When I send a POST request to "/api/v1/wallets" with body:
       """
       {
@@ -32,12 +46,25 @@ Feature: wallet api - create/import wallets
       }
       """
     And I keep the JSON response at "id" as "id"
+    And I keep the JSON response at "blockHeight.top" as "blockHeightTop"
+    And I keep the JSON response at "blockHeight.current" as "blockHeightCurrent"
+    And I keep the JSON response at "peerCount" as "peerCount"
     Then the response should be 201 and match this json:
       """
       {
           "id": ${id},
           "name": "Test Wallet ir2ku...",
           "address": "ir2ku6Rgh69WqEfzAnQfBLTSsoYW17bEJbPUptFedjzG6yWu3o4mNNC23zyGS74KWQ92XhLXhm9uTUhrSPbTc5zK1QGSA63rz",
-          "owner": "testuser"
+          "owner": ${testuser.id},
+          "status": "RUNNING",
+          "balance": {
+            "total": 0,
+            "locked": 0
+          },
+          "blockHeight": {
+            "current": ${blockHeightCurrent},
+            "top": ${blockHeightTop}
+          },
+          "peerCount": ${peerCount}
       }
       """

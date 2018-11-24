@@ -128,7 +128,15 @@ func (s *serviceImpl) ImportWallet(dto ImportDTO, userId string) (*DetailedWalle
 }
 
 func (s *serviceImpl) GetWallets(userId string) ([]*Wallet, error) {
-	return store.FindWalletsByOwner(bson.ObjectIdHex(userId))
+	wallets, e := store.FindWalletsByOwner(bson.ObjectIdHex(userId))
+	for k, wallet := range wallets {
+		if err := s.checkRunning(wallet); err != nil {
+			wallets[k].Status = STOPPED
+		} else {
+			wallets[k].Status = RUNNING
+		}
+	}
+	return wallets, e
 }
 
 func (s *serviceImpl) GetWallet(walletId string, userId string) (*DetailedWallet, error) {
@@ -142,22 +150,8 @@ func (s *serviceImpl) GetWallet(walletId string, userId string) (*DetailedWallet
 	lWallet := &LoadedWallet{Wallet: wallet}
 	dWallet := &DetailedWallet{LoadedWallet: lWallet}
 
-	ctx := context.Background()
-
-	listFilters := filters.NewArgs()
-	listFilters.Add("name", wallet.Id.Hex())
-	listFilters.Add("status", "running")
-
-	cList, err := s.dockerClient.ContainerList(ctx, types.ContainerListOptions{
-		Limit:   1,
-		Filters: listFilters,
-	})
-	if err != nil {
+	if err := s.checkRunning(wallet); err != nil {
 		return nil, err
-	}
-
-	if len(cList) == 0 {
-		return dWallet, ErrWalletNotRunning
 	}
 
 	walletd, err := s.newWalletdClient(wallet.Id.Hex())
@@ -197,6 +191,29 @@ func (s *serviceImpl) StartWallet(walletId string, password string, userId strin
 // TODO: daniel 22.11.18 - implement!
 func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error) {
 	return nil, nil
+}
+
+func (s *serviceImpl) checkRunning(wallet *Wallet) error {
+	ctx := context.Background()
+
+	listFilters := filters.NewArgs()
+	listFilters.Add("name", wallet.Id.Hex())
+	listFilters.Add("status", "running")
+
+	cList, err := s.dockerClient.ContainerList(ctx, types.ContainerListOptions{
+		Limit:   1,
+		Filters: listFilters,
+	})
+	if err != nil {
+		log.Errorf("Could not check status of wallet %s: %s", wallet.Id.Hex(), err.Error())
+		return ErrWalletNotRunning
+	}
+
+	if len(cList) == 0 {
+		return ErrWalletNotRunning
+	}
+
+	return nil
 }
 
 func (s *serviceImpl) createNewVolume(wallet *Wallet) error {

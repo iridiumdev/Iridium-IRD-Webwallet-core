@@ -30,13 +30,15 @@ Feature: wallet api - get wallets
             "id": ${id0},
             "name": "FooWallet",
             "address": ${address0},
-            "owner": "testuser"
+            "owner": ${testuser.id},
+            "status": "RUNNING"
         },
         {
             "id": ${id1},
             "name": "BarWallet",
             "address": ${address1},
-            "owner": "testuser"
+            "owner": ${testuser.id},
+            "status": "RUNNING"
         }
       ]
       """

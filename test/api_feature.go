@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/DATA-DOG/godog/gherkin"
 	"github.com/iridiumdev/gin-jwt"
+	"github.com/iridiumdev/webwallet-core/user"
 	"github.com/onsi/gomega"
 	"gopkg.in/resty.v1"
 )
@@ -14,6 +15,8 @@ type ApiFeature struct {
 	jsonSpec       *JSONSpec
 	BaseUrl        string
 	AuthMiddleware *jwt.GinJWTMiddleware
+	TestUsers      map[string]*user.User
+	authContext    *user.User
 	accessToken    string
 }
 
@@ -25,11 +28,13 @@ func (a *ApiFeature) ResetResponse() (err error) {
 
 func (a *ApiFeature) IAmLoggedInAs(username string) (err error) {
 
+	currentUser := a.TestUsers[username]
 	token, _, err := a.AuthMiddleware.TokenGenerator(jwt.MapClaims{
-		"id":    username,
+		"id":    currentUser.Id.Hex(),
 		"scope": "access",
 	})
 	a.accessToken = token
+	a.authContext = currentUser
 
 	return
 }
@@ -69,7 +74,7 @@ func (a *ApiFeature) IDoARequest(method string, path string) (err error) {
 	}
 
 	a.resp = resp
-	a.jsonSpec = NewJSONSpec(string(resp.Body()))
+	a.jsonSpec = NewJSONSpec(string(resp.Body()), a.authContext)
 
 	// handle panic
 	defer func() {
@@ -118,7 +123,7 @@ func (a *ApiFeature) IDoARequestWithBody(method string, path string, body *gherk
 	}
 
 	a.resp = resp
-	a.jsonSpec = NewJSONSpec(string(resp.Body()))
+	a.jsonSpec = NewJSONSpec(string(resp.Body()), a.authContext)
 
 	// handle panic
 	defer func() {
