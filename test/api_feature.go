@@ -10,6 +10,7 @@ import (
 	"github.com/onsi/gomega"
 	"gopkg.in/resty.v1"
 	"net/http"
+	"strings"
 )
 
 type ApiFeature struct {
@@ -18,6 +19,7 @@ type ApiFeature struct {
 	BaseUrl        string
 	AuthMiddleware *jwt.GinJWTMiddleware
 	TestUsers      map[string]*user.User
+	TestWallets    map[string]*wallet.Wallet
 	authContext    *user.User
 	accessToken    string
 }
@@ -55,6 +57,11 @@ func (a *ApiFeature) ICreateATestWalletWithNameAndPassword(name string, password
 
 	err = a.TheResponseShouldBe(http.StatusCreated)
 
+	testWallet := &wallet.DetailedWallet{}
+	err = json.Unmarshal(a.resp.Body(), testWallet)
+
+	a.TestWallets[name] = testWallet.Wallet
+
 	return err
 }
 
@@ -75,6 +82,10 @@ func (a *ApiFeature) KeepJSONResponseAt(path string, name string) (err error) {
 
 func (a *ApiFeature) IDoARequest(method string, path string) (err error) {
 	var resp = &resty.Response{}
+
+	for k, v := range a.TestWallets {
+		path = strings.Replace(path, fmt.Sprintf("${%s.id}", k), v.Id.Hex(), -1)
+	}
 
 	if method == "GET" {
 		resp, err = resty.R().

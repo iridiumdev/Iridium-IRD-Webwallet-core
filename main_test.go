@@ -12,6 +12,7 @@ import (
 	"github.com/iridiumdev/webwallet-core/config"
 	"github.com/iridiumdev/webwallet-core/test"
 	"github.com/iridiumdev/webwallet-core/user"
+	"github.com/iridiumdev/webwallet-core/wallet"
 	"github.com/onsi/gomega"
 	"gopkg.in/resty.v1"
 	"net/http/httptest"
@@ -79,6 +80,8 @@ func FeatureContext(s *godog.Suite) {
 		apiFeature.TestUsers = map[string]*user.User{
 			"testuser": testuser,
 		}
+
+		apiFeature.TestWallets = make(map[string]*wallet.Wallet)
 
 		//scenario := scenarioArg.(*gherkin.Scenario)
 		//scenario.Tags

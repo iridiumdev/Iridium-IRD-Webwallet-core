@@ -28,3 +28,34 @@ Feature: wallet api - get wallets
         }
       ]
       """
+
+  Scenario: Get a single wallet with details for current user
+    Given I am logged in as "testuser"
+    And I create a test wallet with name "testwallet1" and password "s3cr3tpa$$"
+    When I send a GET request to "/api/v1/wallets/${testwallet1.id}"
+    And I keep the JSON response at "id" as "id"
+    And I keep the JSON response at "address" as "address"
+    And I keep the JSON response at "blockHeight.top" as "blockHeightTop"
+    And I keep the JSON response at "blockHeight.current" as "blockHeightCurrent"
+    And I keep the JSON response at "peerCount" as "peerCount"
+    Then the response should be 200 and match this json:
+      """
+      {
+          "id": ${id},
+          "name": "testwallet1",
+          "address": ${address},
+          "owner": ${testuser.id},
+          "status": "RUNNING",
+          "balance": {
+            "total": 0,
+            "locked": 0
+          },
+          "blockHeight": {
+            "current": ${blockHeightCurrent},
+            "top": ${blockHeightTop}
+          },
+          "peerCount": ${peerCount}
+      }
+      """
+
+
