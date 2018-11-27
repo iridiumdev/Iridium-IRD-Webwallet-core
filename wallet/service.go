@@ -200,7 +200,6 @@ func (s *serviceImpl) StartWallet(walletId string, password string, userId strin
 	return detailedWallet, err
 }
 
-// TODO: daniel 22.11.18 - implement!
 func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error) {
 	ctx := context.Background()
 
