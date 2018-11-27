@@ -122,6 +122,10 @@ func (a *ApiFeature) IDoARequestWithBody(method string, path string, body *gherk
 
 	var resp = &resty.Response{}
 
+	for k, v := range a.TestWallets {
+		path = strings.Replace(path, fmt.Sprintf("${%s.id}", k), v.Id.Hex(), -1)
+	}
+
 	var bodyRaw []byte
 	var bodyString interface{}
 

@@ -40,7 +40,7 @@ type Wallet struct {
 	Name    string         `json:"name" bson:"name"`
 	Address string         `json:"address" bson:"address"`
 	Owner   bson.ObjectId  `json:"owner" bson:"owner"`
-	Status  InstanceStatus `json:"status"`
+	Status  InstanceStatus `json:"status" bson:"-"`
 }
 
 type LoadedWallet struct {

@@ -25,6 +25,7 @@ func (controller *Controller) Routes() {
 		api.GET("/", controller.getListHandler())
 		api.GET("/:id", controller.getHandler())
 		api.POST("/:id/instance", controller.postInstanceHandler())
+		api.DELETE("/:id/instance", controller.deleteInstanceHandler())
 	}
 }
 
@@ -61,6 +62,18 @@ func (controller *Controller) postInstanceHandler() gin.HandlerFunc {
 		wallet, err := service.StartWallet(walletId, dto.Password, userId)
 		if !handleWalletErrors(c, err) {
 			c.JSON(http.StatusCreated, wallet)
+		}
+	}
+}
+
+func (controller *Controller) deleteInstanceHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userId := auth.ExtractUserId(c)
+		walletId := c.Param("id")
+
+		wallet, err := service.StopWallet(walletId, userId)
+		if !handleWalletErrors(c, err) {
+			c.JSON(http.StatusOK, wallet)
 		}
 	}
 }

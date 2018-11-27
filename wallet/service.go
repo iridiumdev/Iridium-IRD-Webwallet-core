@@ -31,6 +31,9 @@ type Service interface {
 var (
 	ErrWalletNotFound   = errors.New("wallet not found")
 	ErrWalletNotRunning = errors.New("wallet not running")
+
+	ErrCouldNotStopWallet  = errors.New("wallet could not be stopped")
+	ErrCouldNotStartWallet = errors.New("wallet could not be started")
 )
 
 var service Service
@@ -130,7 +133,7 @@ func (s *serviceImpl) ImportWallet(dto ImportDTO, userId string) (*DetailedWalle
 func (s *serviceImpl) GetWallets(userId string) ([]*Wallet, error) {
 	wallets, e := store.FindWalletsByOwner(bson.ObjectIdHex(userId))
 	for k, wallet := range wallets {
-		if err := s.checkRunning(wallet); err != nil {
+		if _, err := s.checkRunning(wallet); err != nil {
 			wallets[k].Status = STOPPED
 		} else {
 			wallets[k].Status = RUNNING
@@ -150,7 +153,7 @@ func (s *serviceImpl) GetWallet(walletId string, userId string) (*DetailedWallet
 	lWallet := &LoadedWallet{Wallet: wallet}
 	dWallet := &DetailedWallet{LoadedWallet: lWallet}
 
-	if err := s.checkRunning(wallet); err != nil {
+	if _, err := s.checkRunning(wallet); err != nil {
 		return nil, err
 	}
 
@@ -190,11 +193,42 @@ func (s *serviceImpl) StartWallet(walletId string, password string, userId strin
 
 // TODO: daniel 22.11.18 - implement!
 func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error) {
-	return nil, nil
+	ctx := context.Background()
+
+	wallet, err := store.FindWalletByOwner(bson.ObjectIdHex(walletId), bson.ObjectIdHex(userId))
+	if err != nil || wallet == nil {
+		log.Errorf("Could not find wallet %s for user %s, err: %s", walletId, userId, err.Error())
+		return nil, ErrWalletNotFound
+	}
+
+	walletContainer, err := s.checkRunning(wallet)
+	if err != nil {
+		if err == ErrWalletNotRunning {
+			wallet.Status = STOPPED
+			return wallet, nil
+		} else {
+			log.Error("Could not stop wallet %s due to: %s", walletId, err.Error())
+			return nil, ErrCouldNotStopWallet
+		}
+	}
+	wallet.Status = RUNNING
+
+	err = s.dockerClient.ContainerRemove(ctx, walletContainer.ID, types.ContainerRemoveOptions{
+		Force: true,
+	})
+	if err != nil {
+		log.Error("Could not stop wallet %s due to: %s", walletId, err.Error())
+		return nil, ErrCouldNotStopWallet
+	}
+
+	wallet.Status = STOPPED
+
+	return wallet, nil
 }
 
-func (s *serviceImpl) checkRunning(wallet *Wallet) error {
+func (s *serviceImpl) checkRunning(wallet *Wallet) (types.Container, error) {
 	ctx := context.Background()
+	var container types.Container
 
 	listFilters := filters.NewArgs()
 	listFilters.Add("name", wallet.Id.Hex())
@@ -210,14 +244,16 @@ func (s *serviceImpl) checkRunning(wallet *Wallet) error {
 	})
 	if err != nil {
 		log.Errorf("Could not check status of wallet %s: %s", wallet.Id.Hex(), err.Error())
-		return ErrWalletNotRunning
+		return container, ErrWalletNotRunning
 	}
 
 	if len(cList) == 0 {
-		return ErrWalletNotRunning
+		return container, ErrWalletNotRunning
+	} else {
+		container = cList[0]
 	}
 
-	return nil
+	return container, nil
 }
 
 func (s *serviceImpl) createNewVolume(wallet *Wallet) error {
