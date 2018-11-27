@@ -58,7 +58,6 @@ Feature: wallet api - get wallets
       }
       """
 
-
   Scenario: Start/Stop a wallet
     Given I am logged in as "testuser"
     And I create a test wallet with name "testwallet1" and password "s3cr3tpa$$"
@@ -105,4 +104,25 @@ Feature: wallet api - get wallets
             "peerCount": ${peerCount}
         }
       """
+
+
+  Scenario: Start a already RUNNING wallet leads to an error
+    Given I am logged in as "testuser"
+    And I create a test wallet with name "testwallet1" and password "s3cr3tpa$$"
+    When I send a POST request to "/api/v1/wallets/${testwallet1.id}/instance" with body:
+      """
+      {
+        "password": "s3cr3tpa$$"
+      }
+      """
+    Then the response should be 400 and match this json:
+      """
+      {
+        "error":"wallet already running"
+      }
+      """
+    When I send a DELETE request to "/api/v1/wallets/${testwallet1.id}/instance"
+    Then the response should be 200
+    When I send a DELETE request to "/api/v1/wallets/${testwallet1.id}/instance"
+    Then the response should be 200
 

@@ -32,6 +32,8 @@ var (
 	ErrWalletNotFound   = errors.New("wallet not found")
 	ErrWalletNotRunning = errors.New("wallet not running")
 
+	ErrWalletAlreadyRunning = errors.New("wallet already running")
+
 	ErrCouldNotStopWallet  = errors.New("wallet could not be stopped")
 	ErrCouldNotStartWallet = errors.New("wallet could not be started")
 )
@@ -146,7 +148,7 @@ func (s *serviceImpl) GetWallet(walletId string, userId string) (*DetailedWallet
 
 	wallet, err := store.FindWalletByOwner(bson.ObjectIdHex(walletId), bson.ObjectIdHex(userId))
 	if err != nil || wallet == nil {
-		log.Errorf("Could not find wallet %s for user %s, err: %s", walletId, userId, err.Error())
+		log.Warnf("Could not find wallet %s for user %s, err: %s", walletId, userId, err.Error())
 		return nil, ErrWalletNotFound
 	}
 
@@ -172,18 +174,25 @@ func (s *serviceImpl) StartWallet(walletId string, password string, userId strin
 
 	wallet, err := store.FindWalletByOwner(bson.ObjectIdHex(walletId), bson.ObjectIdHex(userId))
 	if err != nil || wallet == nil {
-		log.Errorf("Could not find wallet %s for user %s, err: %s", walletId, userId, err.Error())
+		log.Warnf("Could not find wallet %s for user %s, err: %s", walletId, userId, err.Error())
 		return nil, ErrWalletNotFound
+	}
+
+	walletContainer, _ := s.checkRunning(wallet)
+	if walletContainer != nil {
+		return nil, ErrWalletAlreadyRunning
 	}
 
 	loadedWallet, err := s.instantiateContainer(wallet, password)
 	if err != nil {
-		return nil, err
+		log.Debugf("Could not start wallet %s due to: %s", walletId, err.Error())
+		return nil, ErrCouldNotStartWallet
 	}
 
 	walletd, err := s.newWalletdClient(wallet.Id.Hex())
 	if err != nil {
-		return nil, err
+		log.Debugf("Could not start wallet %s due to: %s", walletId, err.Error())
+		return nil, ErrCouldNotStartWallet
 	}
 
 	detailedWallet, err := s.fetchDetails(loadedWallet, walletd)
@@ -197,7 +206,7 @@ func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error
 
 	wallet, err := store.FindWalletByOwner(bson.ObjectIdHex(walletId), bson.ObjectIdHex(userId))
 	if err != nil || wallet == nil {
-		log.Errorf("Could not find wallet %s for user %s, err: %s", walletId, userId, err.Error())
+		log.Warnf("Could not find wallet %s for user %s, err: %s", walletId, userId, err.Error())
 		return nil, ErrWalletNotFound
 	}
 
@@ -226,9 +235,8 @@ func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error
 	return wallet, nil
 }
 
-func (s *serviceImpl) checkRunning(wallet *Wallet) (types.Container, error) {
+func (s *serviceImpl) checkRunning(wallet *Wallet) (*types.Container, error) {
 	ctx := context.Background()
-	var container types.Container
 
 	listFilters := filters.NewArgs()
 	listFilters.Add("name", wallet.Id.Hex())
@@ -244,16 +252,15 @@ func (s *serviceImpl) checkRunning(wallet *Wallet) (types.Container, error) {
 	})
 	if err != nil {
 		log.Errorf("Could not check status of wallet %s: %s", wallet.Id.Hex(), err.Error())
-		return container, ErrWalletNotRunning
+		return nil, ErrWalletNotRunning
 	}
 
 	if len(cList) == 0 {
-		return container, ErrWalletNotRunning
+		return nil, ErrWalletNotRunning
 	} else {
-		container = cList[0]
+		return &cList[0], nil
 	}
 
-	return container, nil
 }
 
 func (s *serviceImpl) createNewVolume(wallet *Wallet) error {
