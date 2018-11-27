@@ -107,6 +107,17 @@ func handleWalletErrors(c *gin.Context, err error) bool {
 		return util.HandleError(c, err, http.StatusFailedDependency)
 	}
 
+	if err == ErrWalletAlreadyRunning {
+		return util.HandleError(c, err, http.StatusBadRequest)
+	}
+
+	if err == ErrCouldNotStartWallet {
+		return util.HandleError(c, err, http.StatusInternalServerError)
+	}
+	if err == ErrCouldNotStopWallet {
+		return util.HandleError(c, err, http.StatusInternalServerError)
+	}
+
 	return util.HandleError(c, err, http.StatusBadRequest)
 
 }
