@@ -218,7 +218,7 @@ func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error
 			wallet.Status = STOPPED
 			return wallet, nil
 		} else {
-			log.Error("Could not stop wallet %s due to: %s", walletId, err.Error())
+			log.Errorf("Could not stop wallet %s due to: %s", walletId, err.Error())
 			return nil, ErrCouldNotStopWallet
 		}
 	}
@@ -228,7 +228,7 @@ func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error
 		Force: true,
 	})
 	if err != nil {
-		log.Error("Could not stop wallet %s due to: %s", walletId, err.Error())
+		log.Errorf("Could not stop wallet %s due to: %s", walletId, err.Error())
 		return nil, ErrCouldNotStopWallet
 	}
 
