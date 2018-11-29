@@ -26,6 +26,9 @@ type Service interface {
 
 	StartWallet(walletId string, password string, userId string) (*DetailedWallet, error)
 	StopWallet(walletId string, userId string) (*Wallet, error)
+
+	FetchDetails(wallet *LoadedWallet, rpc iridium.WalletdRPC) (*DetailedWallet, error)
+	NewWalletdClient(walletId string) (iridium.WalletdRPC, error)
 }
 
 var (
@@ -64,7 +67,7 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO, userId string) (*DetailedWalle
 		return nil, err
 	}
 
-	walletd, err := s.newWalletdClient(wallet.Id.Hex())
+	walletd, err := s.NewWalletdClient(wallet.Id.Hex())
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +87,7 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO, userId string) (*DetailedWalle
 
 	lWallet := &LoadedWallet{Wallet: wallet}
 
-	dWallet, err := s.fetchDetails(lWallet, walletd)
+	dWallet, err := s.FetchDetails(lWallet, walletd)
 
 	return dWallet, err
 }
@@ -104,7 +107,7 @@ func (s *serviceImpl) ImportWallet(dto ImportDTO, userId string) (*DetailedWalle
 		return nil, err
 	}
 
-	walletd, err := s.newWalletdClient(wallet.Id.Hex())
+	walletd, err := s.NewWalletdClient(wallet.Id.Hex())
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +130,7 @@ func (s *serviceImpl) ImportWallet(dto ImportDTO, userId string) (*DetailedWalle
 
 	lWallet := &LoadedWallet{Wallet: wallet}
 
-	dWallet, err := s.fetchDetails(lWallet, walletd)
+	dWallet, err := s.FetchDetails(lWallet, walletd)
 
 	return dWallet, err
 }
@@ -159,13 +162,13 @@ func (s *serviceImpl) GetWallet(walletId string, userId string) (*DetailedWallet
 		return nil, err
 	}
 
-	walletd, err := s.newWalletdClient(wallet.Id.Hex())
+	walletd, err := s.NewWalletdClient(wallet.Id.Hex())
 	if err != nil {
 		dWallet.Status = ERROR
 		return dWallet, err
 	}
 
-	dWallet, err = s.fetchDetails(lWallet, walletd)
+	dWallet, err = s.FetchDetails(lWallet, walletd)
 
 	return dWallet, err
 }
@@ -189,13 +192,13 @@ func (s *serviceImpl) StartWallet(walletId string, password string, userId strin
 		return nil, ErrCouldNotStartWallet
 	}
 
-	walletd, err := s.newWalletdClient(wallet.Id.Hex())
+	walletd, err := s.NewWalletdClient(wallet.Id.Hex())
 	if err != nil {
 		log.Debugf("Could not start wallet %s due to: %s", walletId, err.Error())
 		return nil, ErrCouldNotStartWallet
 	}
 
-	detailedWallet, err := s.fetchDetails(loadedWallet, walletd)
+	detailedWallet, err := s.FetchDetails(loadedWallet, walletd)
 
 	return detailedWallet, err
 }
@@ -230,6 +233,8 @@ func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error
 	}
 
 	wallet.Status = STOPPED
+
+	statusWatcher.RemoveWallet(wallet)
 
 	return wallet, nil
 }
@@ -321,10 +326,12 @@ func (s *serviceImpl) instantiateContainer(wallet *Wallet, password string) (*Lo
 		Wallet: wallet,
 	}
 
-	return loadedWallet, err
+	statusWatcher.AddWallet(loadedWallet)
+
+	return loadedWallet, nil
 }
 
-func (s *serviceImpl) fetchDetails(wallet *LoadedWallet, rpc iridium.WalletdRPC) (*DetailedWallet, error) {
+func (s *serviceImpl) FetchDetails(wallet *LoadedWallet, rpc iridium.WalletdRPC) (*DetailedWallet, error) {
 	dWallet := &DetailedWallet{LoadedWallet: wallet}
 	dWallet.Status = RUNNING
 
@@ -354,7 +361,7 @@ func (s *serviceImpl) fetchDetails(wallet *LoadedWallet, rpc iridium.WalletdRPC)
 	return dWallet, nil
 }
 
-func (s *serviceImpl) newWalletdClient(walletId string) (iridium.WalletdRPC, error) {
+func (s *serviceImpl) NewWalletdClient(walletId string) (iridium.WalletdRPC, error) {
 	containerEndpoint, err := s.resolveContainerEndpoint(walletId)
 	if err != nil {
 		return nil, err

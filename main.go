@@ -24,6 +24,9 @@ func main() {
 	mongoSession := initMongoClient()
 	dockerClient := initDockerClient()
 
+	statusWatcher := wallet.InitWatcher(dockerClient)
+	statusWatcher.Run() // TODO: daniel 29.11.18 - do something with the returned chan - e.g. use in a websocket event dispatcher
+
 	initStores(mongoSession)
 	userService, _ := initServices(dockerClient)
 
@@ -33,6 +36,7 @@ func main() {
 
 	defer mongoSession.Close()
 	defer dockerClient.Close()
+	defer statusWatcher.Close()
 }
 
 func initDockerClient() *client.Client {

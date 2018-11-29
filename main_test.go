@@ -58,8 +58,12 @@ func FeatureContext(s *godog.Suite) {
 	mongoSession := initMongoClient()
 	dockerClient := initDockerClient()
 
+	statusWatcher := wallet.InitWatcher(dockerClient)
+
 	s.BeforeSuite(func() {
 		pruneTestWallets(dockerClient, labels)
+
+		statusWatcher.Run()
 	})
 
 	s.BeforeScenario(func(scenarioArg interface{}) {
@@ -90,6 +94,10 @@ func FeatureContext(s *godog.Suite) {
 
 	s.AfterSuite(func() {
 		pruneTestWallets(dockerClient, labels)
+
+		dockerClient.Close()
+		mongoSession.Close()
+		statusWatcher.Close()
 	})
 
 	s.Step(`^I am logged in as "([^"]*)"$`, apiFeature.IAmLoggedInAs)

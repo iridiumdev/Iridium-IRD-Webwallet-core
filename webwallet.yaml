@@ -7,6 +7,9 @@ mongo:
   database: iridium
 
 webwallet:
+  watcher:
+    # Tick frequency in seconds to fetch the status of the running wallets
+    tickSeconds: 5
   # docker network name to attach satellite containers to
   network: webwallet
   # whether to use the internal docker container name to dns resolver or host ip addresses

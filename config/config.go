@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"sync"
+	"time"
 )
 
 type Config struct {
@@ -28,6 +29,7 @@ type Webwallet struct {
 	Network          string    `json:"network"`
 	InternalResolver bool      `json:"internalResolver"`
 	Satellite        Satellite `json:"satellite"`
+	Watcher          Watcher   `json:"watcher"`
 }
 
 type Satellite struct {
@@ -35,6 +37,10 @@ type Satellite struct {
 	Command []string          `json:"command"`
 	RpcPort string            `json:"command"`
 	Labels  map[string]string `json:"labels"`
+}
+
+type Watcher struct {
+	TickSeconds time.Duration `json:"tickSeconds"`
 }
 
 var singleton *Config
