@@ -58,7 +58,15 @@ func FeatureContext(s *godog.Suite) {
 	mongoSession := initMongoClient()
 	dockerClient := initDockerClient()
 
-	statusWatcher := wallet.InitWatcher(dockerClient)
+	userService, _, eventService := initServices(dockerClient)
+
+	statusWatcher := wallet.InitWatcher(dockerClient, eventService)
+
+	engine, _, authMiddleware := initMainEngine(userService)
+
+	ts := httptest.NewServer(engine)
+	apiFeature.BaseUrl = ts.URL
+	apiFeature.AuthMiddleware = authMiddleware
 
 	s.BeforeSuite(func() {
 		pruneTestWallets(dockerClient, labels)
@@ -71,13 +79,6 @@ func FeatureContext(s *godog.Suite) {
 		mongoSession.DB(config.Get().Mongo.Database).DropDatabase()
 
 		initStores(mongoSession)
-		userService, _ := initServices(dockerClient)
-
-		engine, _, authMiddleware := initMainEngine(userService)
-
-		ts := httptest.NewServer(engine)
-		apiFeature.BaseUrl = ts.URL
-		apiFeature.AuthMiddleware = authMiddleware
 
 		testuser, _ := userService.CreateUser(user.User{Username: "testuser", Email: "test@ird.cash", Password: "secr3tPw"})
 

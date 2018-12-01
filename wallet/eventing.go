@@ -4,6 +4,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/gin-gonic/gin/json"
 	"github.com/iridiumdev/webwallet-core/config"
+	"github.com/iridiumdev/webwallet-core/event"
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
@@ -13,6 +14,7 @@ type watcher struct {
 	events       chan *DetailedWallet
 	quit         chan struct{}
 	dockerClient *client.Client
+	eventService event.Service
 
 	running map[string]*LoadedWallet
 }
@@ -32,11 +34,12 @@ type StatusWatcher interface {
 var lock = sync.RWMutex{}
 var statusWatcher StatusWatcher
 
-func InitWatcher(dockerClient *client.Client) StatusWatcher {
+func InitWatcher(dockerClient *client.Client, eventService event.Service) StatusWatcher {
 	statusWatcher = &watcher{
 		events:       make(chan *DetailedWallet),
 		quit:         make(chan struct{}),
 		dockerClient: dockerClient,
+		eventService: eventService,
 		running:      make(map[string]*LoadedWallet),
 	}
 	return statusWatcher
@@ -113,6 +116,7 @@ func (w *watcher) propagateWalletDetails() {
 
 		bytes, _ := json.Marshal(dWallet)
 		log.Trace(string(bytes))
+		w.eventService.SendToUser(dWallet.Owner.Hex(), dWallet)
 		//w.events <- dWallet
 	}
 }

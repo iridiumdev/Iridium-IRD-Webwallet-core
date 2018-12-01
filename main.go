@@ -7,6 +7,7 @@ import (
 	"github.com/iridiumdev/gin-jwt"
 	"github.com/iridiumdev/webwallet-core/auth"
 	"github.com/iridiumdev/webwallet-core/config"
+	"github.com/iridiumdev/webwallet-core/event"
 	"github.com/iridiumdev/webwallet-core/user"
 	"github.com/iridiumdev/webwallet-core/wallet"
 	log "github.com/sirupsen/logrus"
@@ -24,14 +25,14 @@ func main() {
 	mongoSession := initMongoClient()
 	dockerClient := initDockerClient()
 
-	statusWatcher := wallet.InitWatcher(dockerClient)
-	statusWatcher.Run() // TODO: daniel 29.11.18 - do something with the returned chan - e.g. use in a websocket event dispatcher
-
 	initStores(mongoSession)
-	userService, _ := initServices(dockerClient)
+	userService, _, eventService := initServices(dockerClient)
+
+	statusWatcher := wallet.InitWatcher(dockerClient, eventService)
 
 	engine, _, _ := initMainEngine(userService)
 
+	statusWatcher.Run() // TODO: daniel 29.11.18 - do something with the returned chan - e.g. use in a websocket event dispatcher
 	engine.Run(config.Get().Server.Address)
 
 	defer mongoSession.Close()
@@ -77,13 +78,15 @@ func initMongoClient() *mgo.Session {
 	return session
 }
 
-func initServices(dockerClient *client.Client) (user.Service, wallet.Service) {
+func initServices(dockerClient *client.Client) (user.Service, wallet.Service, event.Service) {
 
 	userService := user.InitService()
 
 	walletService := wallet.InitService(dockerClient)
 
-	return userService, walletService
+	eventService := event.InitService()
+
+	return userService, walletService, eventService
 
 }
 
@@ -97,14 +100,7 @@ func initStores(session *mgo.Session) {
 func initMainEngine(userService user.Service) (*gin.Engine, *gin.RouterGroup, *jwt.GinJWTMiddleware) {
 
 	engine := gin.Default()
-	authMiddleware := auth.InitMiddleware(userService)
-
-	authApi := engine.Group("/auth")
-	authApi.POST("/login", authMiddleware.LoginHandler)
-	authApi.POST("/refresh", authMiddleware.RefreshHandler)
-
 	engine.Use(ginlogrus.Logger(log.StandardLogger()), gin.Recovery())
-
 	engine.Use(static.Serve("/", static.LocalFile(config.Get().Server.StaticLocation, true)))
 
 	engine.NoRoute(func(c *gin.Context) {
@@ -118,6 +114,12 @@ func initMainEngine(userService user.Service) (*gin.Engine, *gin.RouterGroup, *j
 			c.File(config.Get().Server.StaticLocation + "/index.html")
 		}
 	})
+
+	authMiddleware := auth.InitMiddleware(userService)
+
+	authApi := engine.Group("/auth")
+	authApi.POST("/login", authMiddleware.LoginHandler)
+	authApi.POST("/refresh", authMiddleware.RefreshHandler)
 
 	api := engine.Group("/api/v1")
 	api.Use(authMiddleware.MiddlewareFunc())
@@ -133,4 +135,7 @@ func initDependencyTree(api *gin.RouterGroup, authApi *gin.RouterGroup) {
 
 	walletController := wallet.NewController(api)
 	walletController.Routes()
+
+	eventController := event.NewController(api)
+	eventController.Routes()
 }
