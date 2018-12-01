@@ -58,7 +58,7 @@ export function HttpLoaderFactory(httpClient: HttpClient) {
         refreshTokenKeyName: 'refresh_token'
       },
       jwt: {
-        usernameField: 'sub',
+        usernameField: 'username',
         rolesField: 'authorities'
       }
     }),
