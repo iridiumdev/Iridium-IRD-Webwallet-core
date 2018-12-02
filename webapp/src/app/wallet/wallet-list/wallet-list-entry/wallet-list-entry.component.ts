@@ -1,12 +1,10 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {WalletContainer} from "../../_model/wallet-container";
-import {WalletContainerStatus} from "../../_model/wallet-container-status";
+import {DetailedWallet} from "../../_model/detailed-wallet";
 import {FormBuilder, FormGroup} from "@angular/forms";
-import {PasswordBase} from "../../_model/password-base";
+import {PasswordDto} from "../../_model/password-dto";
 import {WalletService} from "../../_service/wallet.service";
-import {WalletBase} from "../../_model/wallet-base";
-import {WalletStatus} from "../../_model/wallet-status";
-import {BehaviorSubject, Observable, Subject} from "rxjs";
+import {BehaviorSubject} from "rxjs";
+import {InstanceStatus, Wallet} from '../../_model/wallet';
 
 @Component({
   selector: 'app-wallet-list-entry',
@@ -15,20 +13,20 @@ import {BehaviorSubject, Observable, Subject} from "rxjs";
 })
 export class WalletListEntryComponent implements OnInit {
 
-  private wallet$ = new BehaviorSubject<WalletContainer>({} as WalletContainer);
+  private wallet$ = new BehaviorSubject<Wallet>({} as Wallet);
 
   @Input()
-  set wallet(value: WalletContainer) {
+  set wallet(value: Wallet) {
     this.wallet$.next(value);
   };
 
-  get wallet(): WalletContainer {
+  get wallet(): Wallet {
     return this.wallet$.getValue();
   }
 
-  public walletStatus: WalletStatus;
+  public detailedWallet: DetailedWallet;
 
-  public ContainerStatus = WalletContainerStatus;
+  public InstanceStatus = InstanceStatus;
 
   public form: FormGroup;
 
@@ -40,19 +38,18 @@ export class WalletListEntryComponent implements OnInit {
   ) {
     this.form = fb.group({
       password: ''
-    } as PasswordBase);
+    } as PasswordDto);
 
-    this.wallet$.subscribe(wallet => {
-      this.refreshWalletStatus();
+    this.wallet$.subscribe(() => {
+      this.fetchDetailedWallet();
     })
   }
 
   loadWallet() {
-    const walletBase: WalletBase = this.wallet;
-    walletBase.password = (this.form.value as PasswordBase).password;
+    const pwDto = (this.form.value as PasswordDto);
 
     this.loading = true;
-    this.walletService.loadWallet(walletBase).subscribe(wallet => {
+    this.walletService.loadWallet(this.wallet.id, pwDto).subscribe(wallet => {
       this.wallet = wallet;
     }, error => {
       console.error("Error!");
@@ -63,10 +60,10 @@ export class WalletListEntryComponent implements OnInit {
 
   }
 
-  private refreshWalletStatus(): void {
-    if (this.wallet.containerStatus === WalletContainerStatus.RUNNING) {
-      this.walletService.getWalletStatus(this.wallet.address).subscribe(walletStatus => {
-        this.walletStatus = walletStatus;
+  private fetchDetailedWallet(): void {
+    if (this.wallet.status === InstanceStatus.RUNNING) {
+      this.walletService.getDetailedWallet(this.wallet.id).subscribe(walletStatus => {
+        this.detailedWallet = walletStatus;
       })
     }
   }

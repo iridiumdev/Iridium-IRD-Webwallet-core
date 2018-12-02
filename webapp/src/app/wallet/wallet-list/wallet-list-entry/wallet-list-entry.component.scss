@@ -1,3 +1,5 @@
+@import "theming";
+
 .wallet-address-title {
   -ms-text-overflow: ellipsis;
   text-overflow: ellipsis;
@@ -14,3 +16,31 @@
   flex-direction: row;
   justify-content: space-evenly;
 }
+
+
+.wallet-list-entry {
+  &.mat-expansion-panel {
+    &:not(.mat-expanded) {
+      &:last-of-type, &:first-of-type {
+        border-radius: 0;
+      }
+    }
+
+
+    .mat-expansion-panel-content {
+      background: mat-color($mat-ird, 50);
+      color: mat-color($mat-grey, 900);
+
+
+
+    }
+
+  }
+
+
+  .mat-expansion-panel-body {
+    padding-top: 10px;
+  }
+
+}
+

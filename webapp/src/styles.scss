@@ -1,79 +1,4 @@
-@import '~@angular/material/theming';
-@include mat-core();
-// For each palette, you can optionally specify a default, lighter, and darker
-// hue. Available color palettes: https://material.io/design/color/
-$mat-ird: (
-  50 : #fdede0,
-  100 : #f9d3b3,
-  200 : #f6b680,
-  300 : #f2994d,
-  400 : #ef8326,
-  500 : #ec6d00,
-  600 : #ea6500,
-  700 : #e75a00,
-  800 : #e45000,
-  900 : #df3e00,
-  A100 : #ffffff,
-  A200 : #ffdcd3,
-  A400 : #ffb4a0,
-  A700 : #ffa086,
-  contrast: (
-    50 : #000000,
-    100 : #000000,
-    200 : #000000,
-    300 : #000000,
-    400 : #000000,
-    500 : #ffffff,
-    600 : #ffffff,
-    700 : #ffffff,
-    800 : #ffffff,
-    900 : #ffffff,
-    A100 : #000000,
-    A200 : #000000,
-    A400 : #000000,
-    A700 : #000000,
-  )
-);
-
-$mat-ird-accent: (
-  50 : #f8e4f1,
-  100 : #eebcdb,
-  200 : #e38fc4,
-  300 : #d762ac,
-  400 : #cf409a,
-  500 : #c61e88,
-  600 : #c01a80,
-  700 : #b91675,
-  800 : #b1126b,
-  900 : #a40a58,
-  A100 : #ffd1e6,
-  A200 : #ff9ecb,
-  A400 : #ff6baf,
-  A700 : #ff51a1,
-  contrast: (
-    50 : #000000,
-    100 : #000000,
-    200 : #000000,
-    300 : #000000,
-    400 : #ffffff,
-    500 : #ffffff,
-    600 : #ffffff,
-    700 : #ffffff,
-    800 : #ffffff,
-    900 : #ffffff,
-    A100 : #000000,
-    A200 : #000000,
-    A400 : #000000,
-    A700 : #000000,
-  )
-);
-
-
-$iridium-app-primary: mat-palette($mat-ird);
-$iridium-app-accent:  mat-palette($mat-ird-accent);
-
-// The warn palette is optional (defaults to red).
-$iridum-app-warn:    mat-palette($mat-red);
+@import "theming";
 
 $theme: unset;
 .iridium-dark-theme {
@@ -93,6 +18,8 @@ $theme: unset;
   $theme: $iridium-light-theme;
   @import "styles/variables";
 }
+
+
 
 
 @import "~bootstrap/scss/functions";

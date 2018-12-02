@@ -2,9 +2,9 @@ import {Injectable} from '@angular/core';
 import {WalletModule} from "../wallet.module";
 import {HttpClient} from "@angular/common/http";
 import {Observable} from "rxjs";
-import {WalletContainer} from "../_model/wallet-container";
-import {WalletBase} from "../_model/wallet-base";
-import {WalletStatus} from "../_model/wallet-status";
+import {DetailedWallet} from "../_model/detailed-wallet";
+import {PasswordDto} from "../_model/password-dto";
+import {Wallet} from "../_model/wallet";
 
 @Injectable({
   providedIn: WalletModule
@@ -14,16 +14,16 @@ export class WalletService {
   constructor(private http: HttpClient) {
   }
 
-  getWalletList(): Observable<WalletContainer[]> {
-    return this.http.get<WalletContainer[]>('/api/v1/wallets')
+  getWalletList(): Observable<Wallet[]> {
+    return this.http.get<Wallet[]>('/api/v1/wallets')
   }
 
-  loadWallet(walletBase: WalletBase): Observable<WalletContainer> {
-    return this.http.post<WalletContainer>(`/api/v1/wallets/${walletBase.address}`, walletBase)
+  loadWallet(id: string, pw: PasswordDto): Observable<DetailedWallet> {
+    return this.http.post<DetailedWallet>(`/api/v1/wallets/${id}/instance`, pw)
   }
 
-  getWalletStatus(address: string): Observable<WalletStatus> {
-    return this.http.get<WalletStatus>(`/api/v1/wallets/${address}`)
+  getDetailedWallet(id: string): Observable<DetailedWallet> {
+    return this.http.get<DetailedWallet>(`/api/v1/wallets/${id}`)
   }
 
 }
