@@ -8,7 +8,7 @@ This is the Iridium webwallet server implementation (the core).
 - go 1.11
 - [go dep](https://github.com/golang/dep)
 - mongodb 4.x
-- node v10.2.x + npm v5.6.x
+- node v10.14.x + npm v6.4.x
 - @angular/cli v7.0.x
 - docker v18.x
 
@@ -26,7 +26,7 @@ Build the frontend with:
     npm install -g @angular/cli
     npm install
     
-    ng build --aot
+    ng build --aot [--watch]
 
 Run mongodb, e.g. as a docker container:
 
