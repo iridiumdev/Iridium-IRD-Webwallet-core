@@ -1,0 +1,14 @@
+<div class="col-12">
+  <form [formGroup]="form" (submit)="createWallet()">
+    <mat-form-field>
+      <input matInput placeholder="Wallet name" required formControlName="name" type="text">
+    </mat-form-field>
+    <mat-form-field>
+      <input matInput placeholder="Wallet password" required formControlName="password" type="password">
+    </mat-form-field>
+    <button mat-button color="primary" type="submit">
+      <mat-icon>add</mat-icon>
+      Create new Wallet
+    </button>
+  </form>
+</div>

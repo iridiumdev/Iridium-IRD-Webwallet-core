@@ -1,3 +1,20 @@
-<mat-accordion class="example-headers-align">
+<div class="wallet-list col-12 col-lg-10 offset-lg-1 col-xl-8 offset-xl-2">
+
+  <div class="d-none d-sm-none d-md-flex d-lg-flex d-xl-flex justify-content-center">
+    <button mat-raised-button color="primary" routerLink="/wallet/create"><mat-icon>add</mat-icon> Create new Wallet</button>
+    <div class="or-spacer"></div>
+    <div class="or-text">OR</div>
+    <div class="or-spacer"></div>
+    <button mat-raised-button color="accent" routerLink="/wallet/import"><mat-icon>vpn_key</mat-icon> Import Wallet</button>
+  </div>
+
+  <div class="d-md-none d-lg-none d-xl-none d-sm-flex d-flex justify-content-center">
+    <button mat-raised-button color="primary" routerLink="/wallet/create"><mat-icon>add</mat-icon> Create</button>
+    <div class="or-spacer"></div>
+    <div class="or-text">OR</div>
+    <div class="or-spacer"></div>
+    <button mat-raised-button color="accent" routerLink="/wallet/import"><mat-icon>vpn_key</mat-icon> Import</button>
+  </div>
+
   <app-wallet-list-entry *ngFor="let wallet of walletList" [wallet]="wallet"></app-wallet-list-entry>
-</mat-accordion>
+</div>

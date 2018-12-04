@@ -8,6 +8,12 @@ $theme: unset;
 
   $theme: $iridium-dark-theme;
   @import "styles/variables";
+
+  .mat-drawer-container {
+    color: white;
+    background-image: linear-gradient(to top, #08182d 0%, #42363f 100%);
+  }
+
 }
 
 .iridium-light-theme {

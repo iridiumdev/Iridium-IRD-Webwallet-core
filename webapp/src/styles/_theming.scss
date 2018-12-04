@@ -1,4 +1,5 @@
 @import '~@angular/material/theming';
+
 @include mat-core();
 // For each palette, you can optionally specify a default, lighter, and darker
 // hue. Available color palettes: https://material.io/design/color/
@@ -36,20 +37,20 @@ $mat-ird: (
 );
 
 $mat-ird-accent: (
-  50 : #f8e4f1,
-  100 : #eebcdb,
-  200 : #e38fc4,
-  300 : #d762ac,
-  400 : #cf409a,
-  500 : #c61e88,
-  600 : #c01a80,
-  700 : #b91675,
-  800 : #b1126b,
-  900 : #a40a58,
-  A100 : #ffd1e6,
-  A200 : #ff9ecb,
-  A400 : #ff6baf,
-  A700 : #ff51a1,
+  50 : #eee6ed,
+  100 : #d4c1d2,
+  200 : #b798b5,
+  300 : #9a6f97,
+  400 : #855080,
+  500 : #6f316a,
+  600 : #672c62,
+  700 : #5c2557,
+  800 : #521f4d,
+  900 : #40133c,
+  A100 : #ff7df2,
+  A200 : #ff4aec,
+  A400 : #ff17e7,
+  A700 : #fc00e3,
   contrast: (
     50 : #000000,
     100 : #000000,
@@ -63,14 +64,16 @@ $mat-ird-accent: (
     900 : #ffffff,
     A100 : #000000,
     A200 : #000000,
-    A400 : #000000,
-    A700 : #000000,
+    A400 : #ffffff,
+    A700 : #ffffff,
   )
 );
 
 
+
+
 $iridium-app-primary: mat-palette($mat-ird);
-$iridium-app-accent:  mat-palette($mat-ird-accent);
+$iridium-app-accent: mat-palette($mat-ird-accent);
 
 // The warn palette is optional (defaults to red).
-$iridum-app-warn:    mat-palette($mat-red);
+$iridum-app-warn: mat-palette($mat-red);

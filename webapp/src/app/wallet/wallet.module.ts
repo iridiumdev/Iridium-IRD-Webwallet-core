@@ -7,6 +7,9 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
 
 import {SharedModule} from "../shared.module";
 import {WalletListEntryComponent} from './wallet-list/wallet-list-entry/wallet-list-entry.component';
+import { WalletOverviewComponent } from './wallet-overview/wallet-overview.component';
+import { WalletCreateComponent } from './wallet-create/wallet-create.component';
+import { WalletImportComponent } from './wallet-import/wallet-import.component';
 
 @NgModule({
   imports: [
@@ -18,7 +21,7 @@ import {WalletListEntryComponent} from './wallet-list/wallet-list-entry/wallet-l
     MatInputModule,
     MatProgressBarModule,
   ],
-  declarations: [WalletListComponent, WalletListEntryComponent]
+  declarations: [WalletListComponent, WalletListEntryComponent, WalletOverviewComponent, WalletCreateComponent, WalletImportComponent]
 })
 export class WalletModule {
 }

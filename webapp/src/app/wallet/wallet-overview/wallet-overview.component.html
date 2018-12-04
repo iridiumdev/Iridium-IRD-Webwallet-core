@@ -1,0 +1,59 @@
+
+<div class="col-12 col-md-8 offset-md-2 col-lg-6 offset-lg-3">
+
+  <div class="wallet-overview" *ngIf="walletLoaded">
+
+    <div class="wallet-header">
+
+      <div class="wallet-header-top d-flex justify-content-between">
+        <div>
+          <button mat-mini-fab color="primary"><mat-icon>settings</mat-icon></button>
+        </div>
+
+        <div class="wallet-name">{{wallet.name}}</div>
+
+        <div>
+          <button mat-mini-fab color="primary"><mat-icon (click)="lockWallet()">lock</mat-icon></button>
+        </div>
+      </div>
+
+      <div class="wallet-header-body d-flex justify-content-center">
+        <div class="d-flex flex-row align-items-center">
+          <div class="symbol">IRD</div>
+          <div class="flex-column">
+            <div class="balance-total">{{(wallet.balance.total / 100000000) | number: '1.4-4'}}</div>
+            <div class="balance-locked">{{(wallet.balance.locked / 100000000) | number: '1.4-4'}} locked</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wallet-header-bottom d-flex justify-content-between">
+        <div class="sync-block-height">
+          {{wallet.blockHeight.current}} / {{wallet.blockHeight.top}} blocks synced
+        </div>
+        <div class="sync-peers">
+          {{wallet.peerCount}} peers
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="wallet-loader" *ngIf="!walletLoaded">
+    <div class="col-12">
+      <form [formGroup]="form" (submit)="loadWallet()" *ngIf="!loading">
+        <mat-form-field>
+          <input matInput placeholder="Wallet password" required formControlName="password" type="password">
+        </mat-form-field>
+        <button mat-button color="primary" type="submit">
+          <mat-icon>vpn_key</mat-icon>
+          Unlock Wallet
+        </button>
+      </form>
+      <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
+    </div>
+  </div>
+
+</div>
+

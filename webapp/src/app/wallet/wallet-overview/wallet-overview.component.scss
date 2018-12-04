@@ -1,0 +1,62 @@
+
+
+.wallet-header{
+  background-image: url(/assets/img/wallet-header-bg.svg);
+  background-size: cover;
+  background-position: center;
+  border-radius: 20px;
+  padding: 20px 20px 5px 20px;
+  margin: 0 -20px;
+  box-shadow: /* The top layer shadow */ 0 1px 1px rgba(0,0,0,0.15), /* The second layer */ 0 10px 0 -5px rgba(111, 84, 51, 0.57), /* The second layer shadow */ 0 10px 1px -4px rgba(0,0,0,0.15), /* The third layer */ 0 20px 0 -10px rgba(50, 62, 35, 0.49), /* The third layer shadow */ 0 20px 1px -9px rgba(93, 36, 36, 0.49);
+
+
+  .wallet-header-top {
+
+    font-size: 16px;
+
+    .wallet-name {
+      text-transform: uppercase;
+    }
+
+  }
+
+  .wallet-header-body {
+
+    margin-top: 30px;
+
+    .symbol {
+      font-size: 22px;
+      font-weight: bold;
+      width: 50px;
+      margin-left: -25px;
+    }
+
+    .balance-total {
+      font-size: 30px;
+      text-align: end;
+    }
+
+    .balance-locked {
+      font-size: 10px;
+      text-align: end;
+      color: #552d65;
+    }
+
+  }
+
+  .wallet-header-bottom {
+
+    margin-top: 30px;
+    color: #232323;
+
+    .sync-block-height {
+      font-size: 10px;
+    }
+
+    .sync-peers {
+      font-size: 10px;
+    }
+
+  }
+
+}

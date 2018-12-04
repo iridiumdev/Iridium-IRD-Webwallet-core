@@ -1,46 +1,64 @@
 @import "theming";
 
-.wallet-address-title {
-  -ms-text-overflow: ellipsis;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-
-.mat-expansion-panel-header-description {
-  margin-right: 0;
-}
-
-.mat-action-row {
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: row;
-  justify-content: space-evenly;
-}
 
 
 .wallet-list-entry {
-  &.mat-expansion-panel {
-    &:not(.mat-expanded) {
-      &:last-of-type, &:first-of-type {
-        border-radius: 0;
-      }
-    }
+  $bg-color-1: #40343f;
+  $bg-color-2: #353d46;
+  border-radius: 8px;
+  margin: 10px 0;
+  padding: 5px 0;
+  box-shadow: 0 0 20px 1px rgba(0, 0, 0, 0.25);
+  background-image: linear-gradient(to left, #40343f 0%, #353d46 100%);
+  color: #ececec;
+  cursor: pointer;
 
+  .wallet-name {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
 
-    .mat-expansion-panel-content {
-      background: mat-color($mat-ird, 50);
-      color: mat-color($mat-grey, 900);
+  .wallet-address {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    font-size: x-small;
+    color: #c5c5c5;
+  }
+  
+  .wallet-open-arrow {
+    margin-right: -15px;
+    background: #2b2027;
+    margin-top: -25px;
+    margin-bottom: -25px;
+    padding: 23px 0 24px 5px;
+    border-radius: 0 8px 8px 0;
+    line-height: 0px;
+    width: 36px;
+    cursor: pointer;
+    border: 1px solid $bg-color-1;
+  }
 
+  &:hover {
+    $bg-hover-color-1: lighten($bg-color-1, 10%);
+    $bg-hover-color-2: lighten($bg-color-2, 10%);
 
+    background-image: linear-gradient(to left, $bg-hover-color-1 0%, $bg-hover-color-2 100%);
 
+    .wallet-open-arrow {
+      border: 1px solid $bg-hover-color-1;
+      transform: translateX(10px);
+      transition: 0.1s;
     }
 
   }
 
-
-  .mat-expansion-panel-body {
-    padding-top: 10px;
-  }
 
 }
 
+
+
+
+.wallet-loader {
+  display: none;
+}

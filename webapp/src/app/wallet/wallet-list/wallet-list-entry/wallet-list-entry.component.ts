@@ -45,20 +45,7 @@ export class WalletListEntryComponent implements OnInit {
     })
   }
 
-  loadWallet() {
-    const pwDto = (this.form.value as PasswordDto);
 
-    this.loading = true;
-    this.walletService.loadWallet(this.wallet.id, pwDto).subscribe(wallet => {
-      this.wallet = wallet;
-    }, error => {
-      console.error("Error!");
-      console.error(error);
-    }, () => {
-      this.loading = false;
-    })
-
-  }
 
   private fetchDetailedWallet(): void {
     if (this.wallet.status === InstanceStatus.RUNNING) {

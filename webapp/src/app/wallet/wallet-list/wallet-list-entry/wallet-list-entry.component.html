@@ -1,58 +1,20 @@
-<mat-expansion-panel class="wallet-list-entry" [expanded]="wallet.status === InstanceStatus.RUNNING" hideToggle>
-  <mat-expansion-panel-header>
-    <mat-panel-title class="d-flex wallet-address-title">
-      <div class="wallet-address-title">{{wallet.name}}</div>
-    </mat-panel-title>
-    <mat-panel-description class="justify-content-between">
-      <div class="d-none d-lg-flex">{{ 'app.wallet.container.status.' + wallet.status | translate }}</div>
-      <mat-icon *ngIf="wallet.status === InstanceStatus.STOPPED">lock</mat-icon>
-      <mat-icon *ngIf="wallet.status === InstanceStatus.RUNNING">lock_open</mat-icon>
-      <mat-icon *ngIf="wallet.status === InstanceStatus.ERROR">report_problem</mat-icon>
-    </mat-panel-description>
-  </mat-expansion-panel-header>
-  <div>
-    <p>
-     Address: {{wallet.address}}
-    </p>
+<div class="wallet-list-entry" routerLink="/wallet/{{wallet.id}}/overview">
+  <div class="container-fluid">
+    <div class="row">
+
+      <div class="col-10">
+        <div class="row">
+          <div class="col-12 wallet-name">{{wallet.name}}</div>
+          <div class="col-12 wallet-address">{{wallet.address}}</div>
+        </div>
+      </div>
+      <div class="col-2 d-flex justify-content-end align-items-center">
+        <mat-icon *ngIf="wallet.status === InstanceStatus.STOPPED">lock</mat-icon>
+        <mat-icon *ngIf="wallet.status === InstanceStatus.RUNNING">lock_open</mat-icon>
+        <mat-icon *ngIf="wallet.status === InstanceStatus.ERROR">report_problem</mat-icon>
+        <mat-icon class="wallet-open-arrow">arrow_forward_ios</mat-icon>
+      </div>
+
+    </div>
   </div>
-  <div *ngIf="wallet.status === InstanceStatus.RUNNING && detailedWallet">
-    <p>
-      Wallet Status: {{detailedWallet.status}}
-    </p>
-    <p>
-      Total Balance: {{detailedWallet.balance.total}}
-    </p>
-    <p>
-      <small>Locked Balance: {{detailedWallet.balance.locked}}</small>
-    </p>
-
-  </div>
-
-  <mat-action-row *ngIf="wallet.status === InstanceStatus.STOPPED">
-    <form [formGroup]="form" (submit)="loadWallet()" *ngIf="!loading">
-      <mat-form-field>
-        <input matInput placeholder="Wallet password" required formControlName="password" type="password">
-      </mat-form-field>
-      <button mat-button color="primary" type="submit">
-        <mat-icon>vpn_key</mat-icon>
-        Unlock Wallet
-      </button>
-    </form>
-    <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
-  </mat-action-row>
-
-  <mat-action-row *ngIf="wallet.status === InstanceStatus.RUNNING">
-    <button mat-button color="primary">
-      <mat-icon>reply</mat-icon>
-      Send Iridium
-    </button>
-    <button mat-button color="primary">
-      <mat-icon>list</mat-icon>
-      Transactions
-    </button>
-    <button mat-button color="primary">
-      <mat-icon>vpn_key</mat-icon>
-      Lock Wallet
-    </button>
-  </mat-action-row>
-</mat-expansion-panel>
+</div>
