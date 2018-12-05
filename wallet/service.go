@@ -31,6 +31,13 @@ type Service interface {
 	NewWalletdClient(walletId string) (iridium.WalletdRPC, error)
 }
 
+type containerStatus string
+
+const (
+	DOCKER_EXITED  containerStatus = "exited"
+	DOCKER_RUNNING containerStatus = "running"
+)
+
 var (
 	ErrWalletNotFound   = errors.New("wallet not found")
 	ErrWalletNotRunning = errors.New("wallet not running")
@@ -39,6 +46,8 @@ var (
 
 	ErrCouldNotStopWallet  = errors.New("wallet could not be stopped")
 	ErrCouldNotStartWallet = errors.New("wallet could not be started")
+	ErrCouldNotSaveWallet  = errors.New("wallet could not be saved")
+	ErrCouldNotKillWallet  = errors.New("wallet could not be killed")
 )
 
 var service Service
@@ -69,6 +78,9 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO, userId string) (*DetailedWalle
 
 	walletd, err := s.NewWalletdClient(wallet.Id.Hex())
 	if err != nil {
+		if err := s.killWallet(wallet.Id.Hex(), userId); err != nil {
+			return nil, err
+		}
 		return nil, err
 	}
 
@@ -88,6 +100,15 @@ func (s *serviceImpl) CreateWallet(dto CreateDTO, userId string) (*DetailedWalle
 	lWallet := &LoadedWallet{Wallet: wallet}
 
 	dWallet, err := s.FetchDetails(lWallet, walletd)
+
+	if err != nil {
+		log.Errorf("Could not fetch wallet %s details!", walletd)
+		if err := s.killWallet(dWallet.Id.Hex(), userId); err != nil {
+			return nil, err
+		}
+	} else {
+		statusWatcher.AddWallet(dWallet.LoadedWallet)
+	}
 
 	return dWallet, err
 }
@@ -109,6 +130,9 @@ func (s *serviceImpl) ImportWallet(dto ImportDTO, userId string) (*DetailedWalle
 
 	walletd, err := s.NewWalletdClient(wallet.Id.Hex())
 	if err != nil {
+		if err := s.killWallet(wallet.Id.Hex(), userId); err != nil {
+			return nil, err
+		}
 		return nil, err
 	}
 
@@ -120,7 +144,7 @@ func (s *serviceImpl) ImportWallet(dto ImportDTO, userId string) (*DetailedWalle
 		return nil, err
 	}
 
-	walletd.Save()
+	err = walletd.Save()
 	if err != nil {
 		return nil, err
 	}
@@ -132,13 +156,22 @@ func (s *serviceImpl) ImportWallet(dto ImportDTO, userId string) (*DetailedWalle
 
 	dWallet, err := s.FetchDetails(lWallet, walletd)
 
+	if err != nil {
+		log.Errorf("Could not fetch wallet %s details!", walletd)
+		if err := s.killWallet(dWallet.Id.Hex(), userId); err != nil {
+			return nil, err
+		}
+	} else {
+		statusWatcher.AddWallet(dWallet.LoadedWallet)
+	}
+
 	return dWallet, err
 }
 
 func (s *serviceImpl) GetWallets(userId string) ([]*Wallet, error) {
 	wallets, e := store.FindWalletsByOwner(bson.ObjectIdHex(userId))
 	for k, wallet := range wallets {
-		if _, err := s.checkRunning(wallet); err != nil {
+		if _, err := s.checkContainerRunning(wallet); err != nil {
 			wallets[k].Status = STOPPED
 		} else {
 			wallets[k].Status = RUNNING
@@ -158,7 +191,7 @@ func (s *serviceImpl) GetWallet(walletId string, userId string) (*DetailedWallet
 	lWallet := &LoadedWallet{Wallet: wallet}
 	dWallet := &DetailedWallet{LoadedWallet: lWallet}
 
-	if _, err := s.checkRunning(wallet); err != nil {
+	if _, err := s.checkContainerRunning(wallet); err != nil {
 		return nil, err
 	}
 
@@ -181,7 +214,7 @@ func (s *serviceImpl) StartWallet(walletId string, password string, userId strin
 		return nil, ErrWalletNotFound
 	}
 
-	walletContainer, _ := s.checkRunning(wallet)
+	walletContainer, _ := s.checkContainerRunning(wallet)
 	if walletContainer != nil {
 		return nil, ErrWalletAlreadyRunning
 	}
@@ -192,18 +225,30 @@ func (s *serviceImpl) StartWallet(walletId string, password string, userId strin
 		return nil, ErrCouldNotStartWallet
 	}
 
-	walletd, err := s.NewWalletdClient(wallet.Id.Hex())
+	walletd, err := s.NewWalletdClient(walletId)
 	if err != nil {
 		log.Debugf("Could not start wallet %s due to: %s", walletId, err.Error())
+		if err := s.killWallet(walletId, userId); err != nil {
+			return nil, err
+		}
 		return nil, ErrCouldNotStartWallet
 	}
 
 	detailedWallet, err := s.FetchDetails(loadedWallet, walletd)
+	if err != nil {
+		log.Errorf("Could not fetch wallet %s details!", walletd)
+		if err := s.killWallet(walletId, userId); err != nil {
+			return nil, err
+		}
+	} else {
+		statusWatcher.AddWallet(detailedWallet.LoadedWallet)
+	}
 
 	return detailedWallet, err
 }
 
 func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error) {
+
 	ctx := context.Background()
 
 	wallet, err := store.FindWalletByOwner(bson.ObjectIdHex(walletId), bson.ObjectIdHex(userId))
@@ -212,7 +257,7 @@ func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error
 		return nil, ErrWalletNotFound
 	}
 
-	walletContainer, err := s.checkRunning(wallet)
+	walletContainer, err := s.checkContainerRunning(wallet)
 	if err != nil {
 		if err == ErrWalletNotRunning {
 			wallet.Status = STOPPED
@@ -223,6 +268,20 @@ func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error
 		}
 	}
 	wallet.Status = RUNNING
+
+	walletd, err := s.NewWalletdClient(walletId)
+	if err != nil {
+		log.Debugf("Could not save wallet %s due to: %s", walletId, err.Error())
+		if err := s.killWallet(walletId, userId); err != nil {
+			return nil, err
+		}
+		return nil, ErrCouldNotSaveWallet
+	}
+
+	if err := walletd.Save(); err != nil {
+		log.Warnf("Could not save to wallet file %s for user %s, err: %s", walletId, userId, err.Error())
+		return nil, ErrCouldNotSaveWallet
+	}
 
 	err = s.dockerClient.ContainerRemove(ctx, walletContainer.ID, types.ContainerRemoveOptions{
 		Force: true,
@@ -239,21 +298,51 @@ func (s *serviceImpl) StopWallet(walletId string, userId string) (*Wallet, error
 	return wallet, nil
 }
 
-func (s *serviceImpl) checkRunning(wallet *Wallet) (*types.Container, error) {
+func (s *serviceImpl) killWallet(walletId string, userId string) error {
+
 	ctx := context.Background()
 
-	listFilters := filters.NewArgs()
-	listFilters.Add("name", wallet.Id.Hex())
-	listFilters.Add("status", "running")
-
-	for k, v := range config.Get().Webwallet.Satellite.Labels {
-		listFilters.Add("label", fmt.Sprintf("%s=%s", k, v))
+	wallet, err := store.FindWalletByOwner(bson.ObjectIdHex(walletId), bson.ObjectIdHex(userId))
+	if err != nil || wallet == nil {
+		log.Warnf("Could not find wallet %s for user %s, err: %s", walletId, userId, err.Error())
+		return ErrWalletNotFound
 	}
 
-	cList, err := s.dockerClient.ContainerList(ctx, types.ContainerListOptions{
-		Limit:   1,
-		Filters: listFilters,
+	statusWatcher.RemoveWallet(wallet)
+
+	cList, err := s.getContainer(wallet, DOCKER_RUNNING)
+	if err != nil {
+		log.Error(err)
+	}
+	if len(cList) == 0 {
+		cList, err = s.getContainer(wallet, DOCKER_EXITED)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+	}
+
+	if len(cList) == 0 {
+		log.Errorf("Could not find container for wallet %s!", walletId)
+		return ErrCouldNotKillWallet
+	}
+
+	walletContainer := cList[0]
+
+	err = s.dockerClient.ContainerRemove(ctx, walletContainer.ID, types.ContainerRemoveOptions{
+		Force: true,
 	})
+	if err != nil {
+		log.Errorf("Could not stop wallet %s due to: %s", walletId, err.Error())
+		return ErrCouldNotStopWallet
+	}
+
+	return nil
+}
+
+func (s *serviceImpl) checkContainerRunning(wallet *Wallet) (*types.Container, error) {
+	cList, err := s.getContainer(wallet, DOCKER_RUNNING)
+
 	if err != nil {
 		log.Errorf("Could not check status of wallet %s: %s", wallet.Id.Hex(), err.Error())
 		return nil, ErrWalletNotRunning
@@ -264,7 +353,23 @@ func (s *serviceImpl) checkRunning(wallet *Wallet) (*types.Container, error) {
 	} else {
 		return &cList[0], nil
 	}
+}
 
+func (s *serviceImpl) getContainer(wallet *Wallet, status containerStatus) ([]types.Container, error) {
+	ctx := context.Background()
+
+	listFilters := filters.NewArgs()
+	listFilters.Add("name", wallet.Id.Hex())
+	listFilters.Add("status", string(status))
+
+	for k, v := range config.Get().Webwallet.Satellite.Labels {
+		listFilters.Add("label", fmt.Sprintf("%s=%s", k, v))
+	}
+
+	return s.dockerClient.ContainerList(ctx, types.ContainerListOptions{
+		Limit:   1,
+		Filters: listFilters,
+	})
 }
 
 func (s *serviceImpl) createNewVolume(wallet *Wallet) error {
@@ -325,8 +430,6 @@ func (s *serviceImpl) instantiateContainer(wallet *Wallet, password string) (*Lo
 	loadedWallet := &LoadedWallet{
 		Wallet: wallet,
 	}
-
-	statusWatcher.AddWallet(loadedWallet)
 
 	return loadedWallet, nil
 }
