@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
@@ -51,6 +53,13 @@ func initDockerClient() *client.Client {
 	}
 
 	log.Infof("Initialized docker client %s", cli.ClientVersion())
+
+	ctx := context.Background()
+
+	log.Infof("Pulling satellite docker image %s", config.Get().Webwallet.Satellite.Image)
+	if _, err := cli.ImagePull(ctx, config.Get().Webwallet.Satellite.Image, types.ImagePullOptions{}); err != nil {
+		panic(err)
+	}
 
 	return cli
 }
