@@ -17,7 +17,7 @@ webwallet:
   # false: use the docker containers host ip address to communicate with the rpc api
   internalResolver: false
   satellite:
-    image: iridiumdev/webwallet-satellite:latest
+    image: steevebrush/walletd-satellite:latest #v5 HF testnet compatible // TODO: daniel 06.12.18 - switch back to iridiumdev/webwallet-satellite:latest once HF is integrated
     command:
     - "--testnet"
     - "--daemon-address=178.33.231.97"
