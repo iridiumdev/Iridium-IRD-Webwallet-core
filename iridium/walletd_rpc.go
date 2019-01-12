@@ -126,6 +126,7 @@ func (c *client) GetBalance() (GetBalanceResponse, error) {
 }
 
 func (c *client) callAndUnwrap(method string, result interface{}) error {
+	// TODO: daniel 12.01.19 - handle wallet container not responding, move to new thread with timeout - https://github.com/orgs/iridiumdev/projects/7#card-15104260
 	var response *jsonrpc.RPCResponse
 	var err error
 
