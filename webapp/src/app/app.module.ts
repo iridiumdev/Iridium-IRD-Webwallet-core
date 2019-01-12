@@ -22,6 +22,7 @@ import {FlexLayoutModule} from "@angular/flex-layout";
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from "@angular/material";
 import {IsAuthenticatedDirective} from "./_directives/is-authenticated.directive";
 import {WalletModule} from "./wallet/wallet.module";
+import {SharedModule} from "./shared/shared.module";
 
 // AoT requires an exported function for factories
 export function HttpLoaderFactory(httpClient: HttpClient) {
@@ -38,6 +39,7 @@ export function HttpLoaderFactory(httpClient: HttpClient) {
     BrowserModule,
     BrowserAnimationsModule,
     AppRoutingModule,
+    SharedModule,
 
     FlexLayoutModule,
     HttpClientModule,

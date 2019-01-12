@@ -106,12 +106,12 @@ func (w *watcher) propagateWalletDetails() {
 		if err != nil {
 			log.Errorf("Could not create new RPC Client for wallet %s due to: %s", id, err.Error())
 			dWallet.Status = ERROR
-		}
-
-		dWallet, err = service.FetchDetails(wallet, rpc)
-		if err != nil {
-			log.Errorf("Could fetch details for wallet %s due to: %s", id, err.Error())
-			dWallet.Status = ERROR
+		} else {
+			dWallet, err = service.FetchDetails(wallet, rpc)
+			if err != nil {
+				log.Errorf("Could fetch details for wallet %s due to: %s", id, err.Error())
+				dWallet.Status = ERROR
+			}
 		}
 
 		bytes, _ := json.Marshal(dWallet)

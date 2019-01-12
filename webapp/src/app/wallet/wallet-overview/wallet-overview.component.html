@@ -1,5 +1,4 @@
-
-<div class="col-12 col-md-8 offset-md-2 col-lg-6 offset-lg-3">
+<div class="col-12 col-md-8 offset-md-2 col-lg-6 offset-lg-3" *ngIf="!loadingService.isLoading">
 
   <div class="wallet-overview" *ngIf="walletLoaded">
 
@@ -42,7 +41,7 @@
 
   <div class="wallet-loader" *ngIf="!walletLoaded">
     <div class="col-12">
-      <form [formGroup]="form" (submit)="loadWallet()" *ngIf="!loading">
+      <form [formGroup]="form" (submit)="loadWallet()">
         <mat-form-field>
           <input matInput placeholder="Wallet password" required formControlName="password" type="password">
         </mat-form-field>
@@ -51,7 +50,6 @@
           Unlock Wallet
         </button>
       </form>
-      <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
     </div>
   </div>
 

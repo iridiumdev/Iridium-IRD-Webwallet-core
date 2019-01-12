@@ -2,10 +2,11 @@ import {Component, Input, OnInit} from '@angular/core';
 import {ActivatedRoute, ParamMap, Router} from "@angular/router";
 import {switchMap} from "rxjs/operators";
 import {WalletService} from "../_service/wallet.service";
-import {InstanceStatus, Wallet} from "../_model/wallet";
+import {InstanceStatus} from "../_model/wallet";
 import {FormBuilder, FormGroup} from "@angular/forms";
 import {PasswordDto} from "../_model/password-dto";
 import {DetailedWallet} from "../_model/detailed-wallet";
+import {LoadingService} from "../../shared/loading.service";
 
 @Component({
   selector: 'app-wallet-overview',
@@ -19,18 +20,18 @@ export class WalletOverviewComponent implements OnInit {
   walletLoaded: Boolean = false;
   walletId: string;
 
+  // noinspection JSUnusedGlobalSymbols
   public InstanceStatus = InstanceStatus;
 
   public form: FormGroup;
-
-  public loading = false;
 
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private walletService: WalletService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private loadingService: LoadingService,
   ) {
 
     this.form = fb.group({
@@ -40,9 +41,11 @@ export class WalletOverviewComponent implements OnInit {
   }
 
   ngOnInit() {
+
     this.route.paramMap
       .pipe(switchMap((params: ParamMap) => {
         this.walletId = params.get('id');
+        // this.loadingService.isLoading = true;
         return this.walletService.getDetailedWallet(params.get('id'))
       }))
       .subscribe(wallet => {
@@ -50,32 +53,41 @@ export class WalletOverviewComponent implements OnInit {
         this.wallet = wallet
       }, () => {
         this.walletLoaded = false
+      }, () => {
+        this.loadingService.isLoading = false;
       })
   }
 
   loadWallet() {
     const pwDto = (this.form.value as PasswordDto);
 
-    this.loading = true;
-    this.walletService.loadWallet(this.walletId, pwDto).subscribe(wallet => {
-      this.walletLoaded = true;
-      this.wallet = wallet;
-    }, error => {
-      console.error("Error!");
-      console.error(error);
-    }, () => {
-      this.loading = false;
-    })
+    this.loadingService.isLoading = true;
+    this.walletService.loadWallet(this.walletId, pwDto)
+      .subscribe(wallet => {
+        this.walletLoaded = true;
+        this.wallet = wallet;
+      }, error => {
+        // TODO: daniel 12.01.19 - handle error
+        console.log("Error!");
+        console.log(error);
+      })
+      .add(() => {
+        this.loadingService.isLoading = false;
+      })
 
   }
 
   lockWallet() {
+    this.loadingService.isLoading = true;
     this.walletService.lockWallet(this.walletId).subscribe(() => {
       this.walletLoaded = false;
       this.wallet = null;
     }, error => {
-      console.error("Error!");
-      console.error(error);
+      console.log("Error!");
+      console.log(error);
+    })
+    .add(() => {
+      this.loadingService.isLoading = false;
     })
   }
 

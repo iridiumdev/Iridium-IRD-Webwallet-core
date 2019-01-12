@@ -5,6 +5,7 @@ import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
 import {FlexLayoutModule} from "@angular/flex-layout";
+import { LoadingComponent } from './loading/loading.component';
 
 @NgModule({
   imports: [
@@ -18,8 +19,11 @@ import {FlexLayoutModule} from "@angular/flex-layout";
 
     MatButtonModule,
     MatIconModule,
-    FlexLayoutModule
-  ]
+    FlexLayoutModule,
+
+    LoadingComponent
+  ],
+  declarations: [LoadingComponent]
 })
 export class SharedModule {
 }
