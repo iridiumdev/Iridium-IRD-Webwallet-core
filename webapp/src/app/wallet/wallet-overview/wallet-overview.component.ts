@@ -45,7 +45,7 @@ export class WalletOverviewComponent implements OnInit {
     this.route.paramMap
       .pipe(switchMap((params: ParamMap) => {
         this.walletId = params.get('id');
-        // this.loadingService.isLoading = true;
+        this.loadingService.isLoading = true;
         return this.walletService.getDetailedWallet(params.get('id'))
       }))
       .subscribe(wallet => {
