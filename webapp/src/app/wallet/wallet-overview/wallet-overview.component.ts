@@ -31,7 +31,7 @@ export class WalletOverviewComponent implements OnInit {
     private router: Router,
     private walletService: WalletService,
     private fb: FormBuilder,
-    private loadingService: LoadingService,
+    public loadingService: LoadingService,
   ) {
 
     this.form = fb.group({
